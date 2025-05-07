@@ -1,24 +1,18 @@
-
-
-# Importando Libreria mysql.connector para conectar Python con MySQL
 import mysql.connector
-
+import os
 
 def connectionBD():
     try:
-        # connection = mysql.connector.connect(
         connection = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            passwd="",
-            database="crud_python",
+            host=os.environ.get("MYSQL_HOST", "db"),
+            user=os.environ.get("MYSQL_USER", "root"),
+            passwd=os.environ.get("MYSQL_PASSWORD", ""),
+            database=os.environ.get("MYSQL_DB", "crud_python"),
             charset='utf8mb4',
             collation='utf8mb4_unicode_ci',
             raise_on_warnings=True
-
         )
         if connection.is_connected():
-            # print("Conexión exitosa a la BD")
             return connection
 
     except mysql.connector.Error as error:
