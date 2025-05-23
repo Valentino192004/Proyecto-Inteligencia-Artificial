@@ -33,7 +33,7 @@ def procesar_form_empleado(dataForm, foto_perfil):
 
                 # Creando una tupla con los valores del INSERT
                 valores = (dataForm['nombre_empleado'], dataForm['apellido_empleado'], dataForm['sexo_empleado'],
-                           dataForm['telefono_empleado'], dataForm['email_empleado'], dataForm['profesion_empleado'], result_foto_perfil, salario_entero)
+                        dataForm['telefono_empleado'], dataForm['email_empleado'], dataForm['profesion_empleado'], result_foto_perfil, salario_entero)
                 cursor.execute(sql, valores)
 
                 conexion_MySQLdb.commit()
