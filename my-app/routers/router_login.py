@@ -133,6 +133,32 @@ def loginCliente():
             flash('primero debes iniciar sesión.', 'error')
             return render_template(f'{PATH_URL_LOGIN}/base_login.html')
 
+# Ruta exclusiva API REST que devuelve JSON
+from flask import jsonify
+
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    if request.method == 'POST':
+        email_user = request.form.get('email_user')
+        pass_user = request.form.get('pass_user')
+
+        conexion_MySQLdb = connectionBD()
+        cursor = conexion_MySQLdb.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM users WHERE email_user = %s", [email_user])
+        account = cursor.fetchone()
+
+        if account and check_password_hash(account['pass_user'], pass_user):
+            session['conectado'] = True
+            session['id'] = account['id']
+            session['name_surname'] = account['name_surname']
+            session['email_user'] = account['email_user']
+            return jsonify({"success": True, "message": "Login exitoso"})
+        else:
+            return jsonify({"success": False, "message": "Usuario o contraseña incorrectos"}), 401
+    else:
+        return jsonify({"success": False, "message": "Método no permitido"}), 405
+
+
 
 @app.route('/closed-session',  methods=['GET'])
 def cerraSesion():
@@ -148,3 +174,20 @@ def cerraSesion():
         else:
             flash('recuerde debe iniciar sesión.', 'error')
             return render_template(f'{PATH_URL_LOGIN}/base_login.html')
+# Ruta exclusiva API REST que devuelve JSON
+@app.route('/api/closed-session', methods=['GET'])
+def api_cerrar_sesion():
+    if 'conectado' in session:
+        session.pop('conectado', None)
+        session.pop('id', None)
+        session.pop('name_surname', None)
+        session.pop('email_user', None)  # Corrige el nombre si no coincide
+        return jsonify({
+            "success": True,
+            "message": "Sesión cerrada correctamente"
+        }), 200
+    else:
+        return jsonify({
+            "success": False,
+            "message": "No hay sesión activa"
+        }), 401
