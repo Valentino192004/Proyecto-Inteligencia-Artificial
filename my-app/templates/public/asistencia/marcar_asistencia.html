@@ -1,0 +1,532 @@
+{% extends 'public/base_cpanel.html' %}
+
+{% block customCSS %}
+<style>
+    .video-container {
+        position: relative;
+        max-width: 640px;
+        margin: 0 auto;
+    }
+    
+    #video {
+        width: 100%;
+        height: 480px;
+        border: 3px solid #007bff;
+        border-radius: 10px;
+        background: #000;
+    }
+    
+    .overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+    }
+    
+    .status-card {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .btn-asistencia {
+        width: 200px;
+        height: 60px;
+        font-size: 1.2rem;
+        border-radius: 30px;
+        margin: 10px;
+    }
+    
+    .btn-entrada {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        border: none;
+    }
+    
+    .btn-salida {
+        background: linear-gradient(135deg, #dc3545, #fd7e14);
+        border: none;
+    }
+    
+    .empleado-info {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+        display: none;
+    }
+    
+    .loading-spinner {
+        display: none;
+    }
+    
+    .empleado-selector {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+    }
+    
+    @media (max-width: 768px) {
+        .btn-asistencia {
+            width: 150px;
+            height: 50px;
+            font-size: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<!-- Header -->
+<div class="row">
+    <div class="col-12">
+        <div class="status-card">
+            <h1><i class="bx bx-camera me-2"></i>Marcar Asistencia</h1>
+            <p class="mb-0">Sistema de control de asistencia con cámara</p>
+            <small id="fecha-hora" class="d-block mt-2"></small>
+        </div>
+    </div>
+</div>
+
+<!-- Alertas -->
+<div id="alertas-container"></div>
+
+<!-- Selector de Empleado -->
+<div class="empleado-selector">
+    <h5><i class="bx bx-user me-2"></i>Seleccionar Empleado</h5>
+    <div class="row align-items-end">
+        <div class="col-md-8">
+            <label class="form-label">Empleado</label>
+            <select id="selector-empleado" class="form-select">
+                <option value="">Seleccione un empleado...</option>
+                {% for empleado in empleados %}
+                <option value="{{ empleado.id_empleado }}" data-foto="{{ empleado.foto_empleado }}" data-profesion="{{ empleado.profesion_empleado }}">
+                    {{ empleado.nombre_completo }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <button id="btn-confirmar-empleado" class="btn btn-primary w-100" onclick="confirmarEmpleado()" disabled>
+                <i class="bx bx-check me-2"></i>Confirmar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Información del empleado seleccionado -->
+<div id="empleado-info" class="empleado-info">
+    <div class="row align-items-center">
+        <div class="col-md-2 text-center">
+            <img id="foto-empleado" src="" alt="Foto empleado" class="img-fluid rounded-circle" style="width: 80px; height: 80px; object-fit: cover;">
+        </div>
+        <div class="col-md-6">
+            <h4 id="nombre-empleado" class="mb-1"></h4>
+            <p id="profesion-empleado" class="text-muted mb-0"></p>
+        </div>
+        <div class="col-md-4 text-center">
+            <button id="btn-entrada" class="btn btn-entrada btn-asistencia" onclick="marcarAsistencia('entrada')">
+                <i class="bx bx-log-in me-2"></i>Entrada
+            </button>
+            <button id="btn-salida" class="btn btn-salida btn-asistencia" onclick="marcarAsistencia('salida')">
+                <i class="bx bx-log-out me-2"></i>Salida
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Cámara -->
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-body p-4">
+                <h5 class="card-title">
+                    <i class="bx bx-video me-2"></i>Cámara de Registro
+                </h5>
+                
+                <div class="video-container">
+                    <video id="video" autoplay muted playsinline></video>
+                    <div class="overlay" id="overlay"></div>
+                    <canvas id="canvas" style="display: none;"></canvas>
+                </div>
+                
+                <!-- Controles -->
+                <div class="text-center mt-3">
+                    <button id="btn-iniciar-camara" class="btn btn-primary btn-lg me-2" onclick="iniciarCamara()">
+                        <i class="bx bx-video me-2"></i>Iniciar Cámara
+                    </button>
+                    <button id="btn-test-camara" class="btn btn-success btn-lg me-2" onclick="testearCamara()" disabled>
+                        <i class="bx bx-test-tube me-2"></i>Probar
+                    </button>
+                    <button id="btn-detener" class="btn btn-label-secondary btn-lg" onclick="detenerCamara()" disabled>
+                        <i class="bx bx-stop me-2"></i>Detener
+                    </button>
+                </div>
+                
+                <!-- Loading -->
+                <div class="text-center mt-3 loading-spinner" id="loading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Procesando...</span>
+                    </div>
+                    <p class="mt-2">Procesando imagen...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Instrucciones -->
+<div class="row mt-4">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-body">
+                <h5><i class="bx bx-info-circle text-info me-2"></i>Instrucciones</h5>
+                <ol class="mb-0">
+                    <li>Seleccione el empleado de la lista desplegable</li>
+                    <li>Haga clic en "Iniciar Cámara" para activar la webcam</li>
+                    <li>Posiciónese frente a la cámara con buena iluminación</li>
+                    <li>Haga clic en "Entrada" o "Salida" para registrar</li>
+                </ol>
+                
+                <div class="alert alert-info mt-3">
+                    <h6><i class="bx bx-bulb me-2"></i>Consejos:</h6>
+                    <ul class="mb-0">
+                        <li>Asegúrese de tener buena iluminación</li>
+                        <li>Mire directamente a la cámara</li>
+                        <li>Mantenga el rostro centrado en la imagen</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Asistencia de hoy -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bx bx-list-ul me-2"></i>Asistencia de Hoy</h5>
+                <button class="btn btn-sm btn-outline-primary" onclick="cargarAsistenciaHoy()">
+                    <i class="bx bx-refresh me-1"></i>Actualizar
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="asistencia-hoy-container">
+                    <div class="text-center text-muted">
+                        <i class="bx bx-time bx-lg mb-3"></i>
+                        <p>Cargando asistencia del día...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block customJS %}
+<script>
+let stream = null;
+let empleadoSeleccionado = null;
+let procesandoImagen = false;
+
+// Inicializar página
+document.addEventListener('DOMContentLoaded', function() {
+    actualizarFechaHora();
+    setInterval(actualizarFechaHora, 1000);
+    cargarAsistenciaHoy();
+    
+    // Event listener para selector de empleado
+    document.getElementById('selector-empleado').addEventListener('change', function() {
+        const btn = document.getElementById('btn-confirmar-empleado');
+        btn.disabled = !this.value;
+    });
+});
+
+function actualizarFechaHora() {
+    const ahora = new Date();
+    const opciones = { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    };
+    document.getElementById('fecha-hora').textContent = ahora.toLocaleDateString('es-ES', opciones);
+}
+
+function confirmarEmpleado() {
+    const selector = document.getElementById('selector-empleado');
+    const option = selector.options[selector.selectedIndex];
+    
+    if (!option.value) return;
+    
+    empleadoSeleccionado = {
+        id: option.value,
+        nombre: option.text,
+        foto: option.dataset.foto,
+        profesion: option.dataset.profesion
+    };
+    
+    // Mostrar información del empleado
+    document.getElementById('nombre-empleado').textContent = empleadoSeleccionado.nombre;
+    document.getElementById('profesion-empleado').textContent = empleadoSeleccionado.profesion || 'Empleado';
+    document.getElementById('foto-empleado').src = empleadoSeleccionado.foto || '/static/img/default-avatar.png';
+    document.getElementById('empleado-info').style.display = 'block';
+    
+    mostrarAlerta(`Empleado seleccionado: ${empleadoSeleccionado.nombre}`, 'success');
+}
+
+async function iniciarCamara() {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                width: { ideal: 640 }, 
+                height: { ideal: 480 },
+                facingMode: 'user'
+            } 
+        });
+        
+        const video = document.getElementById('video');
+        video.srcObject = stream;
+        
+        document.getElementById('btn-iniciar-camara').disabled = true;
+        document.getElementById('btn-test-camara').disabled = false;
+        document.getElementById('btn-detener').disabled = false;
+        
+        mostrarAlerta('Cámara iniciada correctamente', 'success');
+        
+    } catch (error) {
+        console.error('Error al acceder a la cámara:', error);
+        mostrarAlerta('Error al acceder a la cámara. Verifique los permisos.', 'danger');
+    }
+}
+
+function detenerCamara() {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+    }
+    
+    const video = document.getElementById('video');
+    video.srcObject = null;
+    
+    document.getElementById('btn-iniciar-camara').disabled = false;
+    document.getElementById('btn-test-camara').disabled = true;
+    document.getElementById('btn-detener').disabled = true;
+    
+    mostrarAlerta('Cámara detenida', 'info');
+}
+
+async function testearCamara() {
+    if (!stream) {
+        mostrarAlerta('Primero debe iniciar la cámara', 'warning');
+        return;
+    }
+    
+    try {
+        const imageData = capturarImagen();
+        
+        const response = await fetch('/api/test-camara', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ imagen: imageData })
+        });
+        
+        const resultado = await response.json();
+        
+        if (resultado.success) {
+            mostrarAlerta('¡Cámara funcionando correctamente!', 'success');
+        } else {
+            mostrarAlerta(resultado.message || 'Error en el test de cámara', 'warning');
+        }
+        
+    } catch (error) {
+        console.error('Error en test:', error);
+        mostrarAlerta('Error al probar la cámara', 'danger');
+    }
+}
+
+function capturarImagen() {
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0);
+    
+    return canvas.toDataURL('image/jpeg', 0.8);
+}
+
+async function marcarAsistencia(tipo) {
+    if (!empleadoSeleccionado) {
+        mostrarAlerta('Primero debe seleccionar un empleado', 'warning');
+        return;
+    }
+    
+    if (!stream) {
+        mostrarAlerta('Primero debe iniciar la cámara', 'warning');
+        return;
+    }
+    
+    if (procesandoImagen) return;
+    
+    procesandoImagen = true;
+    document.getElementById('loading').style.display = 'block';
+    
+    try {
+        const imageData = capturarImagen();
+        
+        const response = await fetch('/api/marcar-asistencia', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                id_empleado: empleadoSeleccionado.id,
+                tipo_marcado: tipo,
+                imagen: imageData,
+                observaciones: `Marcado manual con cámara - ${empleadoSeleccionado.nombre}`
+            })
+        });
+        
+        const resultado = await response.json();
+        
+        if (resultado.success) {
+            mostrarAlerta(`${tipo.charAt(0).toUpperCase() + tipo.slice(1)} registrada correctamente a las ${resultado.hora}`, 'success');
+            cargarAsistenciaHoy(); // Recargar lista
+            
+            // Reset después de marcar
+            setTimeout(() => {
+                document.getElementById('selector-empleado').value = '';
+                document.getElementById('empleado-info').style.display = 'none';
+                document.getElementById('btn-confirmar-empleado').disabled = true;
+                empleadoSeleccionado = null;
+            }, 2000);
+        } else {
+            mostrarAlerta(resultado.message || `Error al marcar ${tipo}`, 'danger');
+        }
+        
+    } catch (error) {
+        console.error('Error al marcar asistencia:', error);
+        mostrarAlerta('Error al registrar asistencia', 'danger');
+    } finally {
+        document.getElementById('loading').style.display = 'none';
+        procesandoImagen = false;
+    }
+}
+
+async function cargarAsistenciaHoy() {
+    try {
+        const response = await fetch('/api/asistencia-hoy');
+        const resultado = await response.json();
+        
+        const container = document.getElementById('asistencia-hoy-container');
+        
+        if (resultado.success && resultado.data.length > 0) {
+            let html = '<div class="table-responsive"><table class="table table-hover">';
+            html += `
+                <thead class="table-light">
+                    <tr>
+                        <th>Empleado</th>
+                        <th>Entrada</th>
+                        <th>Salida</th>
+                        <th>Estado</th>
+                        <th>Horas</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+            
+            resultado.data.forEach(registro => {
+                const badgeClass = {
+                    'presente': 'success',
+                    'tardanza': 'warning',
+                    'ausente': 'danger',
+                    'salida_temprana': 'info'
+                }[registro.estado] || 'secondary';
+                
+                html += `
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <img src="${registro.foto_empleado || '/static/img/default-avatar.png'}" 
+                                     class="rounded-circle me-2" width="32" height="32" style="object-fit: cover;">
+                                ${registro.nombre_completo}
+                            </div>
+                        </td>
+                        <td>${registro.hora_entrada || '<span class="text-muted">Sin entrada</span>'}</td>
+                        <td>${registro.hora_salida || '<span class="text-muted">Sin salida</span>'}</td>
+                        <td><span class="badge bg-${badgeClass}">${registro.estado}</span></td>
+                        <td>${registro.horas_trabajadas || '<span class="text-muted">-</span>'}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+            
+        } else {
+            container.innerHTML = `
+                <div class="text-center text-muted py-4">
+                    <i class="bx bx-calendar-check bx-lg mb-3"></i>
+                    <p>No hay registros de asistencia para hoy</p>
+                </div>
+            `;
+        }
+        
+    } catch (error) {
+        console.error('Error al cargar asistencia:', error);
+        document.getElementById('asistencia-hoy-container').innerHTML = `
+            <div class="text-center text-danger py-4">
+                <i class="bx bx-error bx-lg mb-3"></i>
+                <p>Error al cargar los datos</p>
+            </div>
+        `;
+    }
+}
+
+function mostrarAlerta(mensaje, tipo) {
+    const container = document.getElementById('alertas-container');
+    const alertId = 'alerta-' + Date.now();
+    
+    const alertHTML = `
+        <div id="${alertId}" class="alert alert-${tipo} alert-dismissible fade show" role="alert">
+            <i class="bx bx-${tipo === 'success' ? 'check-circle' : tipo === 'danger' ? 'error-circle' : tipo === 'warning' ? 'error' : 'info-circle'} me-2"></i>
+            ${mensaje}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', alertHTML);
+    
+    // Auto-ocultar después de 5 segundos
+    setTimeout(() => {
+        const alert = document.getElementById(alertId);
+        if (alert) {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }
+    }, 5000);
+}
+
+// Limpiar al salir de la página
+window.addEventListener('beforeunload', function() {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+    }
+});
+</script>
+{% endblock %}

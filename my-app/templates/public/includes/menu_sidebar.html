@@ -32,6 +32,24 @@
         <div data-i18n="Boxicons">Lista de Empleados</div>
       </a>
     </li>
+    
+    <!-- MÓDULO DE ASISTENCIA - AGREGADO -->
+    <li
+      class="menu-item {% if request.path == '/marcar-asistencia' %} active {% endif %}">
+      <a href="/marcar-asistencia" class="menu-link">
+        <i class="menu-icon bi bi-clock-fill"></i>
+        <div data-i18n="Asistencia">Marcar Asistencia</div>
+      </a>
+    </li>
+    <li
+      class="menu-item {% if request.path == '/asistencia' %} active {% endif %}">
+      <a href="/asistencia" class="menu-link">
+        <i class="menu-icon bi bi-calendar-check-fill"></i>
+        <div data-i18n="Asistencia">Ver Asistencias</div>
+      </a>
+    </li>
+    <!-- FIN MÓDULO DE ASISTENCIA -->
+    
     <li
       class="menu-item {% if request.path == '/descargar-informe-empleados' %} active {% endif %}">
       <a href="/descargar-informe-empleados" class="menu-link">

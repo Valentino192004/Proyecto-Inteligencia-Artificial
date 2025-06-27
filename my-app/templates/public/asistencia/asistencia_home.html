@@ -1,0 +1,396 @@
+{% extends 'public/base_cpanel.html' %}
+
+{% block customCSS %}
+<style>
+    .action-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+        height: 100%;
+    }
+    
+    .action-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
+    
+    .action-card .card-body {
+        padding: 2rem;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 200px;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        border-radius: 15px;
+        border: none;
+    }
+    
+    .icon-large {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    
+    .btn-action {
+        border-radius: 25px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .quick-stats {
+        background: white;
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: center;
+        border-left: 4px solid #007bff;
+        height: 100%;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #007bff;
+    }
+    
+    .card-gradient-success {
+        background: linear-gradient(135deg, #28a745, #20c997);
+    }
+    
+    .card-gradient-warning {
+        background: linear-gradient(135deg, #ffc107, #fd7e14);
+    }
+    
+    .card-gradient-info {
+        background: linear-gradient(135deg, #17a2b8, #6f42c1);
+    }
+    
+    .card-gradient-danger {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<!-- Header Principal -->
+<div class="row">
+    <div class="col-12">
+        <div class="stats-card mb-4">
+            <div class="card-body text-center">
+                <h1><i class="bx bx-time me-2"></i>Sistema de Asistencia</h1>
+                <p class="mb-0">Control de asistencia con cámara</p>
+                <small id="fecha-hora" class="d-block mt-2 opacity-75"></small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas Rápidas -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="quick-stats">
+            <div class="stat-number" id="empleados-hoy">0</div>
+            <small class="text-muted">Presentes Hoy</small>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="quick-stats">
+            <div class="stat-number" id="tardanzas-hoy">0</div>
+            <small class="text-muted">Tardanzas</small>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="quick-stats">
+            <div class="stat-number" id="ausentes-hoy">0</div>
+            <small class="text-muted">Ausentes</small>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="quick-stats">
+            <div class="stat-number" id="total-empleados">{{ asistencia_hoy|length }}</div>
+            <small class="text-muted">Total Registros</small>
+        </div>
+    </div>
+</div>
+
+<!-- Acciones Principales -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card action-card h-100 card-gradient-success">
+            <div class="card-body text-white">
+                <i class="bx bx-camera icon-large"></i>
+                <h4 class="card-title">Marcar Asistencia</h4>
+                <p class="card-text">Registrar entrada y salida con cámara</p>
+                <a href="/marcar-asistencia" class="btn btn-light btn-action">
+                    <i class="bx bx-camera me-2"></i>Acceder
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card action-card h-100 card-gradient-info">
+            <div class="card-body text-white">
+                <i class="bx bx-chart icon-large"></i>
+                <h4 class="card-title">Reportes</h4>
+                <p class="card-text">Ver reportes y estadísticas de asistencia</p>
+                <a href="/reportes-asistencia" class="btn btn-light btn-action">
+                    <i class="bx bx-chart me-2"></i>Ver Reportes
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card action-card h-100 card-gradient-warning">
+            <div class="card-body text-white">
+                <i class="bx bx-cog icon-large"></i>
+                <h4 class="card-title">Configuración</h4>
+                <p class="card-text">Configurar horarios y parámetros</p>
+                <a href="/configuracion-asistencia" class="btn btn-light btn-action">
+                    <i class="bx bx-cog me-2"></i>Configurar
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card action-card h-100 card-gradient-danger">
+            <div class="card-body text-white">
+                <i class="bx bx-user icon-large"></i>
+                <h4 class="card-title">Empleados</h4>
+                <p class="card-text">Ver detalles de asistencia por empleado</p>
+                <a href="/lista-de-empleados" class="btn btn-light btn-action">
+                    <i class="bx bx-user me-2"></i>Ver Empleados
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resumen de Asistencia del Día -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bx bx-calendar-check me-2"></i>Asistencia de Hoy
+                </h5>
+                <button class="btn btn-sm btn-outline-primary" onclick="cargarAsistenciaHoy()">
+                    <i class="bx bx-refresh me-1"></i>Actualizar
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="asistencia-hoy-container">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Cargando datos de asistencia...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Accesos Rápidos -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bx bx-zap me-2"></i>Accesos Rápidos
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="/marcar-asistencia" class="btn btn-success btn-sm">
+                        <i class="bx bx-camera me-1"></i>Marcar Ahora
+                    </a>
+                    <button onclick="generarReporteHoy()" class="btn btn-info btn-sm">
+                        <i class="bx bx-download me-1"></i>Reporte Hoy
+                    </button>
+                    <a href="/lista-de-empleados" class="btn btn-secondary btn-sm">
+                        <i class="bx bx-user me-1"></i>Ver Empleados
+                    </a>
+                    <button onclick="abrirModalConfiguracion()" class="btn btn-warning btn-sm">
+                        <i class="bx bx-cog me-1"></i>Config Rápida
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block customJS %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    actualizarFechaHora();
+    setInterval(actualizarFechaHora, 1000);
+    cargarAsistenciaHoy();
+    cargarEstadisticasRapidas();
+});
+
+function actualizarFechaHora() {
+    const ahora = new Date();
+    const opciones = { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    };
+    const fechaHora = document.getElementById('fecha-hora');
+    if (fechaHora) {
+        fechaHora.textContent = ahora.toLocaleDateString('es-ES', opciones);
+    }
+}
+
+async function cargarAsistenciaHoy() {
+    try {
+        const response = await fetch('/api/asistencia-hoy');
+        const resultado = await response.json();
+        
+        const container = document.getElementById('asistencia-hoy-container');
+        
+        if (resultado.success && resultado.data.length > 0) {
+            let html = '<div class="table-responsive"><table class="table table-hover">';
+            html += `
+                <thead class="table-light">
+                    <tr>
+                        <th>Empleado</th>
+                        <th>Entrada</th>
+                        <th>Salida</th>
+                        <th>Estado</th>
+                        <th>Horas Trabajadas</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+            
+            resultado.data.forEach(registro => {
+                const badgeClass = {
+                    'presente': 'success',
+                    'tardanza': 'warning',
+                    'ausente': 'danger',
+                    'salida_temprana': 'info'
+                }[registro.estado] || 'secondary';
+                
+                html += `
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <img src="${registro.foto_empleado || '/static/img/default-avatar.png'}" 
+                                     class="rounded-circle me-2" width="32" height="32" style="object-fit: cover;">
+                                <div>
+                                    <div class="fw-semibold">${registro.nombre_completo}</div>
+                                    <small class="text-muted">${registro.profesion_empleado || ''}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            ${registro.hora_entrada ? `
+                                <span class="badge bg-success">
+                                    ${registro.hora_entrada}
+                                </span>
+                            ` : '<span class="text-muted">Sin entrada</span>'}
+                        </td>
+                        <td>
+                            ${registro.hora_salida ? `
+                                <span class="badge bg-info">
+                                    ${registro.hora_salida}
+                                </span>
+                            ` : '<span class="text-muted">Sin salida</span>'}
+                        </td>
+                        <td><span class="badge bg-${badgeClass}">${registro.estado}</span></td>
+                        <td>${registro.horas_trabajadas || '<span class="text-muted">-</span>'}</td>
+                        <td>
+                            <a href="/detalle-asistencia-empleado/${registro.id_empleado}" class="btn btn-sm btn-outline-primary">
+                                <i class="bx bx-show"></i>
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+            
+        } else {
+            container.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bx bx-calendar-x" style="font-size: 3rem; color: #6c757d;"></i>
+                    <h5 class="mt-3 text-muted">No hay registros para hoy</h5>
+                    <p class="text-muted">Los empleados aún no han marcado asistencia</p>
+                    <a href="/marcar-asistencia" class="btn btn-primary">
+                        <i class="bx bx-camera me-2"></i>Marcar Asistencia
+                    </a>
+                </div>
+            `;
+        }
+        
+    } catch (error) {
+        console.error('Error al cargar asistencia:', error);
+        document.getElementById('asistencia-hoy-container').innerHTML = `
+            <div class="text-center py-5">
+                <i class="bx bx-error" style="font-size: 3rem; color: #dc3545;"></i>
+                <h5 class="mt-3 text-danger">Error al cargar datos</h5>
+                <p class="text-muted">No se pudieron cargar los registros de asistencia</p>
+                <button onclick="cargarAsistenciaHoy()" class="btn btn-outline-primary">
+                    <i class="bx bx-refresh me-2"></i>Reintentar
+                </button>
+            </div>
+        `;
+    }
+}
+
+async function cargarEstadisticasRapidas() {
+    try {
+        const response = await fetch('/api/estadisticas-asistencia');
+        const resultado = await response.json();
+        
+        if (resultado.success) {
+            const stats = resultado.data;
+            
+            // Actualizar estadísticas
+            document.getElementById('empleados-hoy').textContent = stats.dias_presente || 0;
+            document.getElementById('tardanzas-hoy').textContent = stats.dias_tardanza || 0;
+            document.getElementById('ausentes-hoy').textContent = stats.dias_ausente || 0;
+        }
+        
+    } catch (error) {
+        console.error('Error al cargar estadísticas:', error);
+    }
+}
+
+// Función para actualizar todo el dashboard
+function actualizarDashboard() {
+    cargarAsistenciaHoy();
+    cargarEstadisticasRapidas();
+}
+
+// Auto-actualizar cada 30 segundos
+setInterval(actualizarDashboard, 30000);
+
+function generarReporteHoy() {
+    const hoy = new Date().toISOString().split('T')[0];
+    window.open(`/reportes-asistencia?fecha_inicio=${hoy}&fecha_fin=${hoy}`, '_blank');
+}
+
+function abrirModalConfiguracion() {
+    // Por ahora redirigir a la página de configuración
+    window.location.href = '/configuracion-asistencia';
+}
+</script>
+{% endblock %}
