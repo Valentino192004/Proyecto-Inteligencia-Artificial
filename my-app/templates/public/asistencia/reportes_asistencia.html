@@ -1,0 +1,395 @@
+{% extends 'public/base_cpanel.html' %}
+
+{% block customCSS %}
+<style>
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 20px;
+    }
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .stats-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    .stats-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    .filter-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .btn-download {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 500;
+    }
+    .table-responsive {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="row">
+    <div class="col-12">
+        <h4 class="fw-bold py-3 mb-4">
+            <span class="text-muted fw-light">Asistencia /</span> Reportes y Estadísticas
+        </h4>
+    </div>
+</div>
+
+<!-- Filtros de Búsqueda -->
+<div class="row">
+    <div class="col-12">
+        <div class="card filter-card">
+            <div class="row">
+                <div class="col-md-3">
+                    <label for="fecha_inicio" class="form-label">Fecha Inicio:</label>
+                    <input type="date" class="form-control" id="fecha_inicio">
+                </div>
+                <div class="col-md-3">
+                    <label for="fecha_fin" class="form-label">Fecha Fin:</label>
+                    <input type="date" class="form-control" id="fecha_fin">
+                </div>
+                <div class="col-md-3">
+                    <label for="empleado_filtro" class="form-label">Empleado:</label>
+                    <select class="form-select" id="empleado_filtro">
+                        <option value="">Todos los empleados</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button class="btn btn-primary w-100" onclick="generarReporte()">
+                        <i class="bi bi-search"></i> Generar Reporte
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas Generales -->
+<div class="row" id="estadisticas-generales">
+    <div class="col-md-3">
+        <div class="stats-card text-center">
+            <div class="stats-number" id="total-empleados">0</div>
+            <div class="stats-label">Total Empleados</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card text-center" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+            <div class="stats-number" id="total-presentes">0</div>
+            <div class="stats-label">Presentes</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card text-center" style="background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);">
+            <div class="stats-number" id="total-tardanzas">0</div>
+            <div class="stats-label">Tardanzas</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card text-center" style="background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);">
+            <div class="stats-number" id="total-ausentes">0</div>
+            <div class="stats-label">Ausentes</div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos -->
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Asistencia por Día</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="chartAsistenciaDiaria"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Distribución de Estados</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="chartDistribucion"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de Reportes -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Detalle de Asistencia</h5>
+                <div>
+                    <button class="btn btn-download btn-sm" onclick="exportarExcel()">
+                        <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+                    </button>
+                    <button class="btn btn-download btn-sm" onclick="exportarPDF()">
+                        <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="tablaReportes">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Empleado</th>
+                                <th>Fecha</th>
+                                <th>Entrada</th>
+                                <th>Salida</th>
+                                <th>Horas Trabajadas</th>
+                                <th>Estado</th>
+                                <th>Observaciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-reportes">
+                            <tr>
+                                <td colspan="7" class="text-center">
+                                    <i class="bi bi-search"></i> Seleccione un rango de fechas para generar el reporte
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block customJS %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let chartAsistencia, chartDistribucion;
+
+// Inicializar página
+document.addEventListener('DOMContentLoaded', function() {
+    // Establecer fechas por defecto (última semana)
+    const hoy = new Date();
+    const hace7Dias = new Date(hoy.getTime() - (7 * 24 * 60 * 60 * 1000));
+    
+    document.getElementById('fecha_fin').value = hoy.toISOString().split('T')[0];
+    document.getElementById('fecha_inicio').value = hace7Dias.toISOString().split('T')[0];
+    
+    // Cargar empleados
+    cargarEmpleados();
+    
+    // Generar reporte inicial
+    generarReporte();
+});
+
+function cargarEmpleados() {
+    fetch('/api/lista-empleados-asistencia')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const select = document.getElementById('empleado_filtro');
+                select.innerHTML = '<option value="">Todos los empleados</option>';
+                
+                data.data.forEach(empleado => {
+                    const option = document.createElement('option');
+                    option.value = empleado.id_empleado;
+                    option.textContent = empleado.nombre_completo;
+                    select.appendChild(option);
+                });
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+function generarReporte() {
+    const fechaInicio = document.getElementById('fecha_inicio').value;
+    const fechaFin = document.getElementById('fecha_fin').value;
+    const empleadoId = document.getElementById('empleado_filtro').value;
+    
+    if (!fechaInicio || !fechaFin) {
+        alert('Debe seleccionar un rango de fechas');
+        return;
+    }
+    
+    // Mostrar loading
+    document.getElementById('tbody-reportes').innerHTML = `
+        <tr><td colspan="7" class="text-center">
+            <i class="bi bi-arrow-clockwise spin"></i> Generando reporte...
+        </td></tr>
+    `;
+    
+    // Generar reporte
+    let url = `/api/reporte-asistencia-general?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+    if (empleadoId) {
+        url += `&id_empleado=${empleadoId}`;
+    }
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                mostrarReporte(data.data);
+                actualizarEstadisticas(data.data);
+                generarGraficos(data.data);
+            } else {
+                document.getElementById('tbody-reportes').innerHTML = `
+                    <tr><td colspan="7" class="text-center text-danger">
+                        Error: ${data.message}
+                    </td></tr>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('tbody-reportes').innerHTML = `
+                <tr><td colspan="7" class="text-center text-danger">
+                    Error al generar el reporte
+                </td></tr>
+            `;
+        });
+}
+
+function mostrarReporte(datos) {
+    const tbody = document.getElementById('tbody-reportes');
+    
+    if (datos.length === 0) {
+        tbody.innerHTML = `
+            <tr><td colspan="7" class="text-center">
+                <i class="bi bi-info-circle"></i> No hay registros para el período seleccionado
+            </td></tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = datos.map(registro => `
+        <tr>
+            <td>
+                <div class="d-flex align-items-center">
+                    ${registro.foto_empleado ? 
+                        `<img src="/static/${registro.foto_empleado}" class="rounded-circle me-2" width="32" height="32">` : 
+                        '<div class="bg-secondary rounded-circle me-2 d-flex align-items-center justify-content-center" style="width:32px;height:32px;"><i class="bi bi-person text-white"></i></div>'
+                    }
+                    <div>
+                        <div class="fw-semibold">${registro.nombre_completo}</div>
+                        <small class="text-muted">${registro.profesion_empleado}</small>
+                    </div>
+                </div>
+            </td>
+            <td>${new Date(registro.fecha).toLocaleDateString()}</td>
+            <td>${registro.hora_entrada || '<span class="text-muted">--</span>'}</td>
+            <td>${registro.hora_salida || '<span class="text-muted">--</span>'}</td>
+            <td>${registro.horas_trabajadas || '<span class="text-muted">--</span>'}</td>
+            <td>
+                <span class="badge ${getBadgeClass(registro.estado)}">${registro.estado}</span>
+            </td>
+            <td>${registro.observaciones || '<span class="text-muted">--</span>'}</td>
+        </tr>
+    `).join('');
+}
+
+function getBadgeClass(estado) {
+    switch(estado) {
+        case 'presente': return 'bg-success';
+        case 'tardanza': return 'bg-warning';
+        case 'ausente': return 'bg-danger';
+        case 'salida_temprana': return 'bg-info';
+        default: return 'bg-secondary';
+    }
+}
+
+function actualizarEstadisticas(datos) {
+    const stats = {
+        total: datos.length,
+        presentes: datos.filter(d => d.estado === 'presente').length,
+        tardanzas: datos.filter(d => d.estado === 'tardanza').length,
+        ausentes: datos.filter(d => d.estado === 'ausente').length
+    };
+    
+    document.getElementById('total-empleados').textContent = stats.total;
+    document.getElementById('total-presentes').textContent = stats.presentes;
+    document.getElementById('total-tardanzas').textContent = stats.tardanzas;
+    document.getElementById('total-ausentes').textContent = stats.ausentes;
+}
+
+function generarGraficos(datos) {
+    // Destruir gráficos existentes
+    if (chartAsistencia) chartAsistencia.destroy();
+    if (chartDistribucion) chartDistribucion.destroy();
+    
+    // Gráfico de asistencia diaria
+    const ctxLinea = document.getElementById('chartAsistenciaDiaria').getContext('2d');
+    chartAsistencia = new Chart(ctxLinea, {
+        type: 'line',
+        data: {
+            labels: [...new Set(datos.map(d => new Date(d.fecha).toLocaleDateString()))],
+            datasets: [{
+                label: 'Presentes',
+                data: [...new Set(datos.map(d => d.fecha))].map(fecha => 
+                    datos.filter(d => d.fecha === fecha && d.estado === 'presente').length
+                ),
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+    
+    // Gráfico de distribución
+    const ctxDona = document.getElementById('chartDistribucion').getContext('2d');
+    const estadosCount = {
+        presente: datos.filter(d => d.estado === 'presente').length,
+        tardanza: datos.filter(d => d.estado === 'tardanza').length,
+        ausente: datos.filter(d => d.estado === 'ausente').length
+    };
+    
+    chartDistribucion = new Chart(ctxDona, {
+        type: 'doughnut',
+        data: {
+            labels: ['Presente', 'Tardanza', 'Ausente'],
+            datasets: [{
+                data: [estadosCount.presente, estadosCount.tardanza, estadosCount.ausente],
+                backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+}
+
+function exportarExcel() {
+    alert('Funcionalidad de exportar Excel en desarrollo');
+}
+
+function exportarPDF() {
+    alert('Funcionalidad de exportar PDF en desarrollo');
+}
+</script>
+{% endblock %}

@@ -11,7 +11,6 @@ SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
 
-
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
@@ -71,6 +70,60 @@ CREATE TABLE `users` (
 INSERT INTO `users` (`id`, `name_surname`, `email_user`, `pass_user`, `created_user`) VALUES
 (3, 'Valentino Oriundo', 'valentino@gmail.com', 'scrypt:32768:8:1$QG9Jir2pwhUweMb1$0b080c6157f68d8c01fd89b4752c320c8ab5feff71ff06fcf19d6aa13ff827c15de8550af375a148b600a29a1d54515540bdcae773fdebf79e6af0196bd53b32', '2025-04-05 02:05:57');
 
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `tbl_configuracion_asistencia`
+--
+
+CREATE TABLE `tbl_configuracion_asistencia` (
+  `id_configuracion` int(11) NOT NULL,
+  `parametro` varchar(100) NOT NULL,
+  `valor` text NOT NULL,
+  `descripcion` text DEFAULT NULL,
+  `tipo_dato` enum('string','number','boolean','time') DEFAULT 'string',
+  `fecha_creacion` timestamp NOT NULL DEFAULT current_timestamp(),
+  `fecha_actualizacion` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `tbl_configuracion_asistencia`
+--
+
+INSERT INTO `tbl_configuracion_asistencia` (`id_configuracion`, `parametro`, `valor`, `descripcion`, `tipo_dato`) VALUES
+(1, 'hora_entrada_inicio', '08:00:00', 'Hora de inicio del rango de entrada', 'time'),
+(2, 'hora_entrada_fin', '09:00:00', 'Hora límite para marcar entrada', 'time'),
+(3, 'hora_salida_inicio', '17:00:00', 'Hora de inicio del rango de salida', 'time'),
+(4, 'hora_salida_fin', '18:00:00', 'Hora límite para marcar salida', 'time'),
+(5, 'tolerancia_minutos', '15', 'Minutos de tolerancia para llegadas tarde', 'number'),
+(6, 'requiere_foto', 'true', 'Requiere foto para marcar asistencia', 'boolean'),
+(7, 'permitir_marcado_remoto', 'false', 'Permite marcado desde ubicaciones remotas', 'boolean'),
+(8, 'dias_laborables', '1,2,3,4,5', 'Días laborables (1=Lunes, 7=Domingo)', 'string'),
+(9, 'empresa_nombre', 'Mi Empresa', 'Nombre de la empresa', 'string'),
+(10, 'sistema_activo', 'true', 'Sistema de asistencia activo', 'boolean');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `tbl_asistencia`
+--
+
+CREATE TABLE `tbl_asistencia` (
+  `id_asistencia` int(11) NOT NULL,
+  `id_empleado` int(11) NOT NULL,
+  `fecha_asistencia` date NOT NULL,
+  `hora_entrada` time DEFAULT NULL,
+  `hora_salida` time DEFAULT NULL,
+  `tipo_marcado` enum('entrada','salida') NOT NULL,
+  `estado` enum('presente','ausente','tarde','temprano') DEFAULT 'presente',
+  `observaciones` text DEFAULT NULL,
+  `imagen_entrada` longtext DEFAULT NULL,
+  `imagen_salida` longtext DEFAULT NULL,
+  `coordenadas_gps` varchar(100) DEFAULT NULL,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `fecha_registro` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 --
 -- Índices para tablas volcadas
 --
@@ -88,6 +141,21 @@ ALTER TABLE `users`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indices de la tabla `tbl_configuracion_asistencia`
+--
+ALTER TABLE `tbl_configuracion_asistencia`
+  ADD PRIMARY KEY (`id_configuracion`),
+  ADD UNIQUE KEY `parametro` (`parametro`);
+
+--
+-- Indices de la tabla `tbl_asistencia`
+--
+ALTER TABLE `tbl_asistencia`
+  ADD PRIMARY KEY (`id_asistencia`),
+  ADD KEY `idx_empleado_fecha` (`id_empleado`,`fecha_asistencia`),
+  ADD KEY `idx_fecha` (`fecha_asistencia`);
+
+--
 -- AUTO_INCREMENT de las tablas volcadas
 --
 
@@ -102,10 +170,31 @@ ALTER TABLE `tbl_empleados`
 --
 ALTER TABLE `users`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT de la tabla `tbl_configuracion_asistencia`
+--
+ALTER TABLE `tbl_configuracion_asistencia`
+  MODIFY `id_configuracion` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+
+--
+-- AUTO_INCREMENT de la tabla `tbl_asistencia`
+--
+ALTER TABLE `tbl_asistencia`
+  MODIFY `id_asistencia` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- Restricciones para tablas volcadas
+--
+
+--
+-- Filtros para la tabla `tbl_asistencia`
+--
+ALTER TABLE `tbl_asistencia`
+  ADD CONSTRAINT `fk_asistencia_empleado` FOREIGN KEY (`id_empleado`) REFERENCES `tbl_empleados` (`id_empleado`) ON DELETE CASCADE ON UPDATE CASCADE;
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-
-

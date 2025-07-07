@@ -1,0 +1,587 @@
+{% extends 'public/base_cpanel.html' %}
+
+{% block customCSS %}
+<style>
+    .config-section {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+        border-left: 4px solid #007bff;
+    }
+    .config-item {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+    }
+    .config-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .config-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 8px;
+    }
+    .config-description {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin-bottom: 10px;
+    }
+    .btn-save {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        color: white;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-weight: 500;
+        box-shadow: 0 4px 6px rgba(40, 167, 69, 0.3);
+    }
+    .btn-save:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 12px rgba(40, 167, 69, 0.4);
+    }
+    .btn-test {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        border: none;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 6px;
+    }
+    .status-indicator {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+    .status-active { background-color: #28a745; }
+    .status-inactive { background-color: #dc3545; }
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+    }
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 34px;
+    }
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+    input:checked + .slider {
+        background-color: #28a745;
+    }
+    input:checked + .slider:before {
+        transform: translateX(26px);
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="row">
+    <div class="col-12">
+        <h4 class="fw-bold py-3 mb-4">
+            <span class="text-muted fw-light">Asistencia /</span> Configuración del Sistema
+        </h4>
+    </div>
+</div>
+
+<!-- Horarios de Trabajo -->
+<div class="config-section">
+    <h5 class="mb-4">
+        <i class="bi bi-clock-fill text-primary me-2"></i>
+        Horarios de Trabajo
+    </h5>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="config-item">
+                <div class="config-label">Hora de Entrada</div>
+                <div class="config-description">Hora oficial de inicio de la jornada laboral</div>
+                <input type="time" class="form-control" id="hora_entrada" data-param="hora_entrada">
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="config-item">
+                <div class="config-label">Hora de Salida</div>
+                <div class="config-description">Hora oficial de fin de la jornada laboral</div>
+                <input type="time" class="form-control" id="hora_salida" data-param="hora_salida">
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="config-item">
+                <div class="config-label">Tolerancia de Entrada (minutos)</div>
+                <div class="config-description">Minutos de tolerancia para considerar puntual</div>
+                <input type="number" class="form-control" id="tolerancia_entrada" data-param="tolerancia_entrada" min="0" max="60">
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="config-item">
+                <div class="config-label">Tolerancia de Salida (minutos)</div>
+                <div class="config-description">Minutos de tolerancia para salida temprana</div>
+                <input type="number" class="form-control" id="tolerancia_salida" data-param="tolerancia_salida" min="0" max="60">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Configuración de Cámara y Fotos -->
+<div class="config-section">
+    <h5 class="mb-4">
+        <i class="bi bi-camera-fill text-success me-2"></i>
+        Configuración de Cámara
+    </h5>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="config-item">
+                <div class="config-label d-flex justify-content-between align-items-center">
+                    Guardar Fotos de Asistencia
+                    <label class="switch">
+                        <input type="checkbox" id="guardar_fotos_asistencia" data-param="guardar_fotos_asistencia">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="config-description">Guardar automáticamente las fotos al marcar asistencia</div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="config-item">
+                <div class="config-label d-flex justify-content-between align-items-center">
+                    Foto Obligatoria
+                    <label class="switch">
+                        <input type="checkbox" id="requiere_foto" data-param="requiere_foto">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="config-description">Requerir foto obligatoria para marcar asistencia</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="config-item">
+                <div class="config-label d-flex justify-content-between align-items-center">
+                    Test de Cámara
+                    <button class="btn btn-test" onclick="testearCamara()">
+                        <i class="bi bi-camera"></i> Probar Cámara
+                    </button>
+                </div>
+                <div class="config-description">Verificar que la cámara funcione correctamente</div>
+                <div id="camera-status" class="mt-2">
+                    <span class="status-indicator status-inactive"></span>
+                    <span>Estado: No probado</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Configuración Laboral -->
+<div class="config-section">
+    <h5 class="mb-4">
+        <i class="bi bi-calendar-week text-warning me-2"></i>
+        Configuración Laboral
+    </h5>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="config-item">
+                <div class="config-label">Días Laborales</div>
+                <div class="config-description">Días de la semana que se consideran laborales</div>
+                <input type="text" class="form-control" id="dias_laborales" data-param="dias_laborales" placeholder="L,M,X,J,V">
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="config-item">
+                <div class="config-label">Horas Laborales por Día</div>
+                <div class="config-description">Número de horas que debe trabajar por día</div>
+                <input type="number" class="form-control" id="horas_laborales_dia" data-param="horas_laborales_dia" min="1" max="24" step="0.5">
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="config-item">
+                <div class="config-label">Zona Horaria</div>
+                <div class="config-description">Zona horaria del sistema</div>
+                <select class="form-select" id="zona_horaria" data-param="zona_horaria">
+                    <option value="America/Bogota">Bogotá (UTC-5)</option>
+                    <option value="America/Mexico_City">Ciudad de México (UTC-6)</option>
+                    <option value="America/Lima">Lima (UTC-5)</option>
+                    <option value="America/Buenos_Aires">Buenos Aires (UTC-3)</option>
+                    <option value="America/Santiago">Santiago (UTC-3)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estado del Sistema -->
+<div class="config-section">
+    <h5 class="mb-4">
+        <i class="bi bi-gear-fill text-info me-2"></i>
+        Estado del Sistema
+    </h5>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="config-item text-center">
+                <div class="config-label">Base de Datos</div>
+                <div id="db-status">
+                    <span class="status-indicator status-active"></span>
+                    <span>Conectado</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="config-item text-center">
+                <div class="config-label">Cámara</div>
+                <div id="camera-system-status">
+                    <span class="status-indicator status-inactive"></span>
+                    <span>No probado</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="config-item text-center">
+                <div class="config-label">Almacenamiento</div>
+                <div id="storage-status">
+                    <span class="status-indicator status-active"></span>
+                    <span>Disponible</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Botones de Acción -->
+<div class="row">
+    <div class="col-12 text-center">
+        <button class="btn btn-save me-3" onclick="guardarConfiguracion()">
+            <i class="bi bi-check-circle"></i> Guardar Configuración
+        </button>
+        <button class="btn btn-outline-secondary" onclick="cargarConfiguracion()">
+            <i class="bi bi-arrow-clockwise"></i> Recargar
+        </button>
+    </div>
+</div>
+
+<!-- Modal de Test de Cámara -->
+<div class="modal fade" id="cameraTestModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Test de Cámara</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <video id="testVideo" width="100%" height="300" autoplay style="border-radius: 10px;"></video>
+                <div class="mt-3">
+                    <button class="btn btn-success" onclick="tomarFotoTest()">
+                        <i class="bi bi-camera"></i> Tomar Foto de Prueba
+                    </button>
+                </div>
+                <div id="test-result" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block customJS %}
+<script>
+let testStream = null;
+
+// Cargar configuración al iniciar
+document.addEventListener('DOMContentLoaded', function() {
+    cargarConfiguracion();
+});
+
+// Mapeo entre campos HTML y parámetros de BD
+const mapeoParametros = {
+    // HTML -> BD
+    'hora_entrada': 'hora_entrada_inicio',
+    'hora_salida': 'hora_salida_inicio',
+    'tolerancia_entrada': 'tolerancia_minutos',
+    'tolerancia_salida': 'tolerancia_salida_minutos',
+    'guardar_fotos_asistencia': 'requiere_foto',
+    'requiere_foto': 'requiere_foto',
+    'dias_laborales': 'dias_laborables',
+    'horas_laborales_dia': 'horas_laborales_dia',
+    'zona_horaria': 'zona_horaria'
+};
+
+// Mapeo inverso: BD -> HTML
+const mapeoInverso = {};
+Object.keys(mapeoParametros).forEach(key => {
+    mapeoInverso[mapeoParametros[key]] = key;
+});
+
+function cargarConfiguracion() {
+    console.log('📡 Cargando configuración...');
+    
+    fetch('/api/configuracion-asistencia')
+        .then(response => {
+            console.log('🔍 Respuesta del servidor:', response.status);
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('📋 Datos recibidos:', data);
+            
+            if (data.success && data.data) {
+                // Procesar cada configuración
+                data.data.forEach(config => {
+                    console.log(`🔧 Procesando: ${config.parametro} = ${config.valor}`);
+                    
+                    // Buscar el campo HTML correspondiente
+                    const campoHTML = mapeoInverso[config.parametro] || config.parametro;
+                    const elemento = document.querySelector(`[data-param="${campoHTML}"]`);
+                    
+                    if (elemento) {
+                        if (elemento.type === 'checkbox') {
+                            // Para checkboxes, verificar si el valor es 'true', '1', o similar
+                            elemento.checked = config.valor === 'true' || config.valor === '1' || config.valor === 1;
+                            console.log(`✅ Checkbox ${campoHTML}: ${elemento.checked}`);
+                        } else {
+                            elemento.value = config.valor;
+                            console.log(`✅ Campo ${campoHTML}: ${config.valor}`);
+                        }
+                    } else {
+                        console.warn(`⚠️ No se encontró elemento para: ${config.parametro} -> ${campoHTML}`);
+                    }
+                });
+                
+                mostrarMensaje('Configuración cargada correctamente', 'success');
+            } else {
+                throw new Error(data.message || 'Error desconocido');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error:', error);
+            mostrarMensaje('Error al cargar configuración: ' + error.message, 'error');
+        });
+}
+
+function guardarConfiguracion() {
+    console.log('💾 Guardando configuración...');
+    
+    const configuracion = {};
+    
+    // Recopilar todos los valores usando el mapeo
+    document.querySelectorAll('[data-param]').forEach(elemento => {
+        const paramHTML = elemento.getAttribute('data-param');
+        const paramBD = mapeoParametros[paramHTML] || paramHTML;
+        
+        if (elemento.type === 'checkbox') {
+            configuracion[paramBD] = elemento.checked ? 'true' : 'false';
+        } else if (elemento.value) {
+            configuracion[paramBD] = elemento.value;
+        }
+        
+        console.log(`📤 ${paramHTML} -> ${paramBD}: ${configuracion[paramBD]}`);
+    });
+    
+    console.log('📋 Configuración a enviar:', configuracion);
+    
+    // Validar campos requeridos
+    if (!configuracion.hora_entrada_inicio || !configuracion.hora_salida_inicio) {
+        mostrarMensaje('Las horas de entrada y salida son obligatorias', 'error');
+        return;
+    }
+    
+    // Enviar configuración
+    fetch('/api/configuracion-asistencia', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(configuracion)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('✅ Respuesta del guardado:', data);
+        
+        if (data.success) {
+            mostrarMensaje('Configuración guardada correctamente', 'success');
+        } else {
+            throw new Error(data.message || 'Error desconocido');
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error:', error);
+        mostrarMensaje('Error al guardar: ' + error.message, 'error');
+    });
+}
+
+function testearCamara() {
+    const modal = new bootstrap.Modal(document.getElementById('cameraTestModal'));
+    modal.show();
+    
+    // Acceder a la cámara
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(function(stream) {
+            testStream = stream;
+            document.getElementById('testVideo').srcObject = stream;
+            
+            document.getElementById('camera-status').innerHTML = `
+                <span class="status-indicator status-active"></span>
+                <span>Cámara funcionando correctamente</span>
+            `;
+            
+            document.getElementById('camera-system-status').innerHTML = `
+                <span class="status-indicator status-active"></span>
+                <span>Funcionando</span>
+            `;
+        })
+        .catch(function(error) {
+            console.error('Error al acceder a la cámara:', error);
+            document.getElementById('test-result').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Error al acceder a la cámara: ${error.message}
+                </div>
+            `;
+            
+            document.getElementById('camera-status').innerHTML = `
+                <span class="status-indicator status-inactive"></span>
+                <span>Error de cámara</span>
+            `;
+        });
+    
+    // Limpiar stream al cerrar modal
+    document.getElementById('cameraTestModal').addEventListener('hidden.bs.modal', function() {
+        if (testStream) {
+            testStream.getTracks().forEach(track => track.stop());
+            testStream = null;
+        }
+    });
+}
+
+function tomarFotoTest() {
+    const video = document.getElementById('testVideo');
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
+    
+    const imagenBase64 = canvas.toDataURL('image/jpeg', 0.8);
+    
+    // Probar API de test
+    fetch('/api/test-camara', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ imagen: imagenBase64 })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('test-result').innerHTML = `
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle"></i>
+                    ${data.message}
+                </div>
+            `;
+        } else {
+            document.getElementById('test-result').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Error: ${data.message}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        document.getElementById('test-result').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle"></i>
+                Error de conexión
+            </div>
+        `;
+    });
+}
+
+function mostrarMensaje(mensaje, tipo) {
+    // Crear alerta temporal
+    const alertClass = tipo === 'success' ? 'alert-success' : 'alert-danger';
+    const iconClass = tipo === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle';
+    
+    const alert = document.createElement('div');
+    alert.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alert.innerHTML = `
+        <i class="bi ${iconClass} me-2"></i>
+        ${mensaje}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alert);
+    
+    // Remover después de 5 segundos
+    setTimeout(() => {
+        alert.remove();
+    }, 5000);
+}
+
+// Función de debug para ver qué campos están disponibles
+function debugCampos() {
+    console.log('🔍 === DEBUG DE CAMPOS ===');
+    
+    document.querySelectorAll('[data-param]').forEach((elemento, index) => {
+        const paramHTML = elemento.getAttribute('data-param');
+        const paramBD = mapeoParametros[paramHTML] || paramHTML;
+        const valor = elemento.type === 'checkbox' ? elemento.checked : elemento.value;
+        
+        console.log(`${index + 1}. HTML: "${paramHTML}" -> BD: "${paramBD}" | Valor: "${valor}" | Tipo: ${elemento.type}`);
+    });
+    
+    console.log('📋 Mapeo disponible:', mapeoParametros);
+    console.log('📋 Mapeo inverso:', mapeoInverso);
+}
+
+// Exponer función de debug globalmente
+window.debugCampos = debugCampos;
+</script>
+{% endblock %}

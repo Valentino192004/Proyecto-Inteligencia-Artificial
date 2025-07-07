@@ -7,7 +7,7 @@ import os
 from controllers.funciones_asistencia import *
 from controllers.funciones_home import sql_detalles_empleadosBD  # Para obtener datos del empleado
 
-PATH_URL = "templates/public/asistencia"
+PATH_URL = "/public/asistencia"
 
 # ================================
 # RUTAS PRINCIPALES
@@ -252,15 +252,23 @@ def detalle_asistencia_empleado(id_empleado):
 
 @app.route('/api/configuracion-asistencia', methods=['GET'])
 def api_obtener_configuracion():
-    """API para obtener configuración del sistema"""
+    """API para obtener configuración del sistema - CORREGIDA"""
+    # Verificar sesión
     if 'conectado' not in session:
         return jsonify({"success": False, "message": "Primero debes iniciar sesión"}), 401
     
     try:
+        # Importar conexión
+        from conexion.conexionBD import connectionBD
+        
+        # Realizar consulta
         with connectionBD() as conexion:
             with conexion.cursor(dictionary=True) as cursor:
                 cursor.execute("SELECT * FROM tbl_configuracion_asistencia ORDER BY parametro")
                 configuraciones = cursor.fetchall()
+                
+                # Log para debug
+                print(f"✅ Configuraciones obtenidas: {len(configuraciones)}")
                 
                 return jsonify({
                     "success": True,
@@ -268,19 +276,33 @@ def api_obtener_configuracion():
                 }), 200
                 
     except Exception as e:
-        return jsonify({"success": False, "message": f"Error: {str(e)}"}), 500
+        # Log del error para debug
+        print(f"❌ Error en api_obtener_configuracion: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        return jsonify({
+            "success": False, 
+            "message": f"Error al obtener configuración: {str(e)}"
+        }), 500
 
 @app.route('/api/configuracion-asistencia', methods=['POST'])
 def api_actualizar_configuracion():
-    """API para actualizar configuración del sistema"""
+    """API para actualizar configuración del sistema - CORREGIDA"""
+    # Verificar sesión
     if 'conectado' not in session:
         return jsonify({"success": False, "message": "Primero debes iniciar sesión"}), 401
     
     try:
+        # Obtener datos JSON
         data = request.get_json()
         if not data:
             return jsonify({"success": False, "message": "No se enviaron datos"}), 400
         
+        # Importar conexión
+        from conexion.conexionBD import connectionBD
+        
+        # Actualizar configuración
         with connectionBD() as conexion:
             with conexion.cursor() as cursor:
                 for parametro, valor in data.items():
@@ -292,13 +314,25 @@ def api_actualizar_configuracion():
                 
                 conexion.commit()
                 
+                # Log para debug
+                print(f"✅ Configuración actualizada: {len(data)} parámetros")
+                
                 return jsonify({
                     "success": True,
                     "message": "Configuración actualizada correctamente"
                 }), 200
                 
     except Exception as e:
-        return jsonify({"success": False, "message": f"Error: {str(e)}"}), 500
+        # Log del error para debug
+        print(f"❌ Error en api_actualizar_configuracion: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        return jsonify({
+            "success": False, 
+            "message": f"Error al actualizar configuración: {str(e)}"
+        }), 500
+
 
 # ================================
 # FUNCIONES DE UTILIDAD

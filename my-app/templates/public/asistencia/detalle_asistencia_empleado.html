@@ -1,0 +1,496 @@
+{% extends 'public/base_cpanel.html' %}
+
+{% block customCSS %}
+<style>
+    .employee-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+    }
+    .employee-photo {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        border: 4px solid rgba(255,255,255,0.3);
+        object-fit: cover;
+    }
+    .employee-info h3 {
+        margin-bottom: 5px;
+        font-weight: 600;
+    }
+    .employee-info p {
+        margin-bottom: 3px;
+        opacity: 0.9;
+    }
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+        margin-bottom: 20px;
+    }
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+    }
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    .stat-present { color: #28a745; }
+    .stat-late { color: #ffc107; }
+    .stat-absent { color: #dc3545; }
+    .stat-early { color: #17a2b8; }
+    .attendance-timeline {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .timeline-item {
+        display: flex;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .timeline-item:last-child {
+        border-bottom: none;
+    }
+    .timeline-date {
+        min-width: 80px;
+        font-weight: 500;
+        color: #495057;
+    }
+    .timeline-status {
+        min-width: 100px;
+    }
+    .timeline-times {
+        flex-grow: 1;
+        margin-left: 15px;
+    }
+    .time-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        margin-right: 5px;
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 20px;
+    }
+    .filter-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<!-- Header del Empleado -->
+<div class="employee-header">
+    <div class="row align-items-center">
+        <div class="col-auto">
+            {% if empleado.foto_empleado %}
+                <img src="/static/{{ empleado.foto_empleado }}" class="employee-photo" alt="Foto empleado">
+            {% else %}
+                <div class="employee-photo bg-white bg-opacity-25 d-flex align-items-center justify-content-center">
+                    <i class="bi bi-person-fill" style="font-size: 3rem; color: rgba(255,255,255,0.8);"></i>
+                </div>
+            {% endif %}
+        </div>
+        <div class="col employee-info">
+            <h3>{{ empleado.nombre_empleado }} {{ empleado.apellido_empleado }}</h3>
+            <p><i class="bi bi-briefcase me-2"></i>{{ empleado.profesion_empleado }}</p>
+            <p><i class="bi bi-envelope me-2"></i>{{ empleado.email_empleado }}</p>
+            <p><i class="bi bi-telephone me-2"></i>{{ empleado.telefono_empleado }}</p>
+        </div>
+        <div class="col-auto">
+            <a href="/asistencia" class="btn btn-light">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="filter-section">
+    <div class="row">
+        <div class="col-md-3">
+            <label for="mes_filtro" class="form-label">Mes:</label>
+            <select class="form-select" id="mes_filtro" onchange="cargarDatos()">
+                <option value="1">Enero</option>
+                <option value="2">Febrero</option>
+                <option value="3">Marzo</option>
+                <option value="4">Abril</option>
+                <option value="5">Mayo</option>
+                <option value="6">Junio</option>
+                <option value="7">Julio</option>
+                <option value="8">Agosto</option>
+                <option value="9">Septiembre</option>
+                <option value="10">Octubre</option>
+                <option value="11">Noviembre</option>
+                <option value="12">Diciembre</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="año_filtro" class="form-label">Año:</label>
+            <select class="form-select" id="año_filtro" onchange="cargarDatos()">
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+                <option value="2023">2023</option>
+            </select>
+        </div>
+        <div class="col-md-6 d-flex align-items-end">
+            <button class="btn btn-primary me-2" onclick="cargarDatos()">
+                <i class="bi bi-arrow-clockwise"></i> Actualizar
+            </button>
+            <button class="btn btn-success" onclick="exportarDatos()">
+                <i class="bi bi-download"></i> Exportar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-number stat-present" id="stat-presente">{{ estadisticas.dias_presente or 0 }}</div>
+            <div class="stat-label">Días Presente</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-number stat-late" id="stat-tardanza">{{ estadisticas.dias_tardanza or 0 }}</div>
+            <div class="stat-label">Tardanzas</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-number stat-absent" id="stat-ausente">{{ estadisticas.dias_ausente or 0 }}</div>
+            <div class="stat-label">Ausencias</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-number stat-early" id="stat-promedio">{{ "%.1f"|format(estadisticas.promedio_horas or 0) }}h</div>
+            <div class="stat-label">Promedio Horas</div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Gráfico de Asistencia -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Historial de Asistencia</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="chartAsistencia"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Timeline de Asistencia -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Registro Detallado</h5>
+            </div>
+            <div class="card-body">
+                <div class="attendance-timeline" id="timeline-asistencia">
+                    {% if asistencia %}
+                        {% for registro in asistencia %}
+                        <div class="timeline-item">
+                            <div class="timeline-date">
+                                {{ registro.fecha.strftime('%d/%m') if registro.fecha else '--' }}
+                            </div>
+                            <div class="timeline-status">
+                                <span class="badge bg-{{ 'success' if registro.estado == 'presente' else 'warning' if registro.estado == 'tardanza' else 'danger' }}">
+                                    {{ registro.estado }}
+                                </span>
+                            </div>
+                            <div class="timeline-times">
+                                {% if registro.hora_entrada %}
+                                    <span class="time-badge bg-light text-dark">
+                                        <i class="bi bi-box-arrow-in-right"></i> {{ registro.hora_entrada }}
+                                    </span>
+                                {% endif %}
+                                {% if registro.hora_salida %}
+                                    <span class="time-badge bg-light text-dark">
+                                        <i class="bi bi-box-arrow-right"></i> {{ registro.hora_salida }}
+                                    </span>
+                                {% endif %}
+                                {% if registro.horas_trabajadas %}
+                                    <span class="time-badge bg-info text-white">
+                                        <i class="bi bi-clock"></i> {{ registro.horas_trabajadas }}h
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-calendar-x"></i>
+                            <p>No hay registros de asistencia</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Panel Lateral -->
+    <div class="col-lg-4">
+        <!-- Resumen Mensual -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Resumen del Mes</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <div class="border-end">
+                            <h4 class="text-primary mb-1" id="total-dias">{{ estadisticas.total_dias or 0 }}</h4>
+                            <small class="text-muted">Total Días</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <h4 class="text-success mb-1" id="asistencia-porcentaje">
+                            {{ "%.0f"|format((estadisticas.dias_presente / estadisticas.total_dias * 100) if estadisticas.total_dias else 0) }}%
+                        </h4>
+                        <small class="text-muted">Asistencia</small>
+                    </div>
+                </div>
+                
+                <div class="progress mb-3" style="height: 10px;">
+                    <div class="progress-bar bg-success" style="width: {{ (estadisticas.dias_presente / estadisticas.total_dias * 100) if estadisticas.total_dias else 0 }}%"></div>
+                    <div class="progress-bar bg-warning" style="width: {{ (estadisticas.dias_tardanza / estadisticas.total_dias * 100) if estadisticas.total_dias else 0 }}%"></div>
+                    <div class="progress-bar bg-danger" style="width: {{ (estadisticas.dias_ausente / estadisticas.total_dias * 100) if estadisticas.total_dias else 0 }}%"></div>
+                </div>
+                
+                <div class="d-flex justify-content-between small">
+                    <span><i class="bi bi-circle-fill text-success"></i> Presente</span>
+                    <span><i class="bi bi-circle-fill text-warning"></i> Tardanza</span>
+                    <span><i class="bi bi-circle-fill text-danger"></i> Ausente</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Acciones Rápidas -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Acciones Rápidas</h5>
+            </div>
+            <div class="card-body">
+                <button class="btn btn-primary w-100 mb-2" onclick="marcarAsistenciaManual()">
+                    <i class="bi bi-clock"></i> Marcar Asistencia Manual
+                </button>
+                <button class="btn btn-info w-100 mb-2" onclick="verDetalleCompleto()">
+                    <i class="bi bi-eye"></i> Ver Detalle Completo
+                </button>
+                <button class="btn btn-success w-100" onclick="exportarReporte()">
+                    <i class="bi bi-file-earmark-excel"></i> Exportar Reporte
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block customJS %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const empleadoId = {{ empleado.id_empleado }};
+let chartAsistencia;
+
+// Inicializar página
+document.addEventListener('DOMContentLoaded', function() {
+    // Establecer mes y año actual
+    const hoy = new Date();
+    document.getElementById('mes_filtro').value = hoy.getMonth() + 1;
+    document.getElementById('año_filtro').value = hoy.getFullYear();
+    
+    cargarDatos();
+});
+
+function cargarDatos() {
+    const mes = document.getElementById('mes_filtro').value;
+    const año = document.getElementById('año_filtro').value;
+    
+    // Cargar estadísticas
+    fetch(`/api/estadisticas-asistencia?id_empleado=${empleadoId}&mes=${mes}&año=${año}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                actualizarEstadisticas(data.data);
+            }
+        })
+        .catch(error => console.error('Error al cargar estadísticas:', error));
+    
+    // Cargar asistencia detallada
+    const fechaInicio = `${año}-${mes.padStart(2, '0')}-01`;
+    const fechaFin = new Date(año, mes, 0).toISOString().split('T')[0];
+    
+    fetch(`/api/asistencia-empleado/${empleadoId}?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                actualizarTimeline(data.data);
+                generarGrafico(data.data);
+            }
+        })
+        .catch(error => console.error('Error al cargar asistencia:', error));
+}
+
+function actualizarEstadisticas(stats) {
+    document.getElementById('stat-presente').textContent = stats.dias_presente || 0;
+    document.getElementById('stat-tardanza').textContent = stats.dias_tardanza || 0;
+    document.getElementById('stat-ausente').textContent = stats.dias_ausente || 0;
+    document.getElementById('stat-promedio').textContent = (stats.promedio_horas || 0).toFixed(1) + 'h';
+    
+    document.getElementById('total-dias').textContent = stats.total_dias || 0;
+    
+    const porcentaje = stats.total_dias ? (stats.dias_presente / stats.total_dias * 100) : 0;
+    document.getElementById('asistencia-porcentaje').textContent = Math.round(porcentaje) + '%';
+    
+    // Actualizar barra de progreso
+    const progressBar = document.querySelector('.progress');
+    const presente = stats.total_dias ? (stats.dias_presente / stats.total_dias * 100) : 0;
+    const tardanza = stats.total_dias ? (stats.dias_tardanza / stats.total_dias * 100) : 0;
+    const ausente = stats.total_dias ? (stats.dias_ausente / stats.total_dias * 100) : 0;
+    
+    progressBar.innerHTML = `
+        <div class="progress-bar bg-success" style="width: ${presente}%"></div>
+        <div class="progress-bar bg-warning" style="width: ${tardanza}%"></div>
+        <div class="progress-bar bg-danger" style="width: ${ausente}%"></div>
+    `;
+}
+
+function actualizarTimeline(asistencia) {
+    const timeline = document.getElementById('timeline-asistencia');
+    
+    if (asistencia.length === 0) {
+        timeline.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="bi bi-calendar-x"></i>
+                <p>No hay registros para este período</p>
+            </div>
+        `;
+        return;
+    }
+    
+    timeline.innerHTML = asistencia.map(registro => {
+        const fecha = new Date(registro.fecha).toLocaleDateString('es-ES', {day: '2-digit', month: '2-digit'});
+        const badgeClass = getBadgeClass(registro.estado);
+        
+        return `
+            <div class="timeline-item">
+                <div class="timeline-date">${fecha}</div>
+                <div class="timeline-status">
+                    <span class="badge ${badgeClass}">${registro.estado}</span>
+                </div>
+                <div class="timeline-times">
+                    ${registro.hora_entrada ? `<span class="time-badge bg-light text-dark"><i class="bi bi-box-arrow-in-right"></i> ${registro.hora_entrada}</span>` : ''}
+                    ${registro.hora_salida ? `<span class="time-badge bg-light text-dark"><i class="bi bi-box-arrow-right"></i> ${registro.hora_salida}</span>` : ''}
+                    ${registro.horas_trabajadas ? `<span class="time-badge bg-info text-white"><i class="bi bi-clock"></i> ${registro.horas_trabajadas}</span>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function getBadgeClass(estado) {
+    switch(estado) {
+        case 'presente': return 'bg-success';
+        case 'tardanza': return 'bg-warning';
+        case 'ausente': return 'bg-danger';
+        case 'salida_temprana': return 'bg-info';
+        default: return 'bg-secondary';
+    }
+}
+
+function generarGrafico(datos) {
+    if (chartAsistencia) chartAsistencia.destroy();
+    
+    const ctx = document.getElementById('chartAsistencia').getContext('2d');
+    
+    // Procesar datos para el gráfico
+    const labels = datos.map(d => new Date(d.fecha).toLocaleDateString('es-ES', {day: '2-digit', month: '2-digit'}));
+    const presente = datos.map(d => d.estado === 'presente' ? 1 : 0);
+    const tardanza = datos.map(d => d.estado === 'tardanza' ? 1 : 0);
+    
+    chartAsistencia = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Presente',
+                    data: presente,
+                    backgroundColor: '#28a745',
+                    borderColor: '#28a745',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Tardanza',
+                    data: tardanza,
+                    backgroundColor: '#ffc107',
+                    borderColor: '#ffc107',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 1,
+                    ticks: {
+                        stepSize: 1,
+                        callback: function(value) {
+                            return value === 1 ? 'Sí' : 'No';
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function marcarAsistenciaManual() {
+    window.location.href = '/marcar-asistencia';
+}
+
+function verDetalleCompleto() {
+    const mes = document.getElementById('mes_filtro').value;
+    const año = document.getElementById('año_filtro').value;
+    window.open(`/reportes-asistencia?empleado=${empleadoId}&mes=${mes}&año=${año}`, '_blank');
+}
+
+function exportarReporte() {
+    alert('Funcionalidad de exportar en desarrollo');
+}
+
+function exportarDatos() {
+    alert('Funcionalidad de exportar datos en desarrollo');
+}
+</script>
+{% endblock %}
