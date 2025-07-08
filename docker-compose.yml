@@ -7,6 +7,8 @@ services:
       - "5000:5000"
     volumes:
       - .:/app
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     depends_on:
       db:
         condition: service_healthy
@@ -16,6 +18,7 @@ services:
       MYSQL_USER: root
       MYSQL_PASSWORD: ""
       MYSQL_DB: crud_python
+      TZ: America/Lima  # <-- Perú
 
   db:
     image: mysql:5.7
@@ -23,6 +26,7 @@ services:
     environment:
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
       MYSQL_DATABASE: crud_python
+      TZ: America/Lima  # <-- Perú
     ports:
       - "3306:3306"
     volumes:
@@ -41,6 +45,7 @@ services:
     environment:
       - PMA_HOST=db
       - PMA_PORT=3306
+      - TZ=America/Lima  # <-- Perú
     depends_on:
       - db
 

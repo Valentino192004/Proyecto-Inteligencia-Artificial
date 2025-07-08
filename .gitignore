@@ -1,0 +1,41 @@
+# ----------------------------------
+# 🐍 Python
+# ----------------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Archivos de base de datos temporales
+*.sqlite3
+
+# Archivos de entorno
+.env
+
+# ----------------------------------
+# 📦 Docker
+# ----------------------------------
+*.pid
+*.sock
+*.tar
+*.log
+
+# ----------------------------------
+# 📁 Proyecto específico
+# ----------------------------------
+
+# Reportes generados automáticamente
+static/downloads-excel/
+*.xlsx
+
+# Archivos de fotos de asistencia
+static/fotos_asistencia/
+
+
+# ----------------------------------
+# 🖥️ Editor / OS
+# ----------------------------------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
