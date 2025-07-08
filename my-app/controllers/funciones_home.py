@@ -6,8 +6,11 @@ import uuid  # Modulo de python para crear un string
 from conexion.conexionBD import connectionBD  # Conexión a BD
 
 import datetime
+from datetime import datetime  # Para formatear fecha y hora
 import re
 import os
+
+import requests
 
 from os import remove  # Modulo  para remover archivo
 from os import path  # Modulo para obtener la ruta o directorio
@@ -383,3 +386,122 @@ def eliminarUsuario(id):
     except Exception as e:
         print(f"Error en eliminarUsuario : {e}")
         return []
+
+
+# consultas DNI con api 
+def consultar_dni_api(dni):
+    try:
+        if not dni or len(dni) != 8 or not dni.isdigit():
+            return {
+                "success": False,
+                "message": "DNI debe tener exactamente 8 dígitos numéricos"
+            }
+        
+        api_url = "https://api.consultasperu.com/api/v1/query"
+
+        headers = {
+            'Content-Type': 'application/json',
+        }
+
+        data = {
+            "token": "09462861dd51641fa8d9947793ae1156a27df903d1468230ec496a4eac628c84",
+            'dni': dni,
+            "document_number": dni
+        }
+
+        print(f"🔍 Consultando DNI: {dni}")
+        print(f"🔍 Data enviada: {data}")
+
+        response = requests.post(api_url, headers=headers, json=data, timeout=10)
+        print(f"🔍 Respuesta API : {response.status_code}")
+
+        if response.status_code == 200:
+            result = response.json()
+            print(f"✅ Datos recibidos: {data}")
+
+            if result.get('success') and result.get('data'):
+                persona = result['data']
+                return {
+                    "success": True,
+                    "data": {
+                        "nombres": persona.get('nombres','').strip().title(),
+                        "apellidos": persona.get('apellidos','').strip().title(),
+                        "fecha_nacimiento": procesar_fecha_nacimiento(persona.get('fechaNacimiento')),
+                        "nombre_completo": f"{persona.get('nombres','')} {persona.get('apellidos','').strip().title()}",
+                  }
+                }
+            else:
+                return {
+                    "success": False,
+                    "message": "No se encontraron datos para este DNI"
+                }
+        elif response.status_code == 404:
+            return {
+                    "success": False,
+                    "message": "DNI no encontrado en la base de datos"
+            }
+        elif response.status_code == 429:
+            return {
+                    "success": False,
+                    "message": "Límite de consultas excedido. Intente más tarde"
+            }
+        else:
+            print(f"❌ Error API: {response.text}")
+            return {
+                "success": False,
+                "message": f"Error en la consulta: {response.status_code}"
+            }
+            
+    except requests.exceptions.Timeout:
+        return {
+            "success": False,
+            "message": "Tiempo de espera agotado. Intente nuevamente"
+        }
+    except requests.exceptions.ConnectionError:
+        return {
+            "success": False,
+            "message": "Error de conexión con el servidor"
+        }
+    except requests.exceptions.RequestException as e:
+        print(f"Error en la consulta: {e}")
+        return {
+            "success": False,
+            "message": "Error al consultar la API externa"
+        }
+    except Exception as e:
+        print(f"❌ Error inesperado: {e}")
+        return {
+            "success": False,
+            "message": "Error interno del servidor"
+        }
+    
+def procesar_fecha_nacimiento(fecha_str):
+    if not fecha_str:
+        return None
+    try:
+        formatos= [
+            "%Y-%m-%d",  # Formato YYYY-MM-DD
+            "%d/%m/%Y",  # Formato DD/MM/YYYY
+            "%d-%m-%Y"   # Formato DD-MM-YYYY
+        ]
+
+        for formato in formatos:
+            try:
+                fecha_obj = datetime.strptime(str(fecha_str), formato)
+                return fecha_obj.strftime("%Y-%m-%d")  # Formato YYYY/MM/DD
+            except ValueError:
+                continue
+        print(f"⚠️ Formato de fecha no reconocido: {fecha_str}") 
+        return None
+    except Exception as e:
+        print(f"Error procesando fecha: {e}")
+        return None
+    
+ # Función para configurar la API (agregar a tu configuración)
+def configurar_api_dni():
+    return {
+        'api_url':'https://api.consultasperu.com/api/v1/query',
+        'token': '09462861dd51641fa8d9947793ae1156a27df903d1468230ec496a4eac628c84',
+        'timeout': 10,
+        'activa': True,  # Cambia a False para desactivar la API
+    }

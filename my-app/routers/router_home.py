@@ -2,7 +2,7 @@ from app import app
 from flask import render_template, request, flash, redirect, url_for, session,  jsonify
 from mysql.connector.errors import Error
 from werkzeug.security import generate_password_hash
-
+ 
 
 # Importando cenexión a BD
 from controllers.funciones_home import *
@@ -280,6 +280,78 @@ def api_detalles_usuario(id_usuario):
             "success": False,
             "message": f"Error al consultar usuario: {str(e)}"
         }), 500
+
+
+@app.route('/api/consultar-dni', methods=['POST'])
+def api_consultar_dni():
+    if 'conectado' not in session:
+        return jsonify({
+            "success": False,
+            "message": "Debes iniciar sesión para usar esta función"
+        }), 401
+    
+    try:
+        data = request.get_json()
+        if not data or 'dni' not in data:
+            return jsonify({
+                "success": False,
+                "message": "DNI es requerido"
+            }), 400
+        
+        dni = data['dni'].strip()
+        if len(dni) != 8 or not dni.isdigit():
+            return jsonify({
+                "success": False,
+                "message": "DNI debe tener 8 dígitos"
+            }), 400
+        try: 
+            with connectionBD() as conexion:
+                with conexion.cursor(dictionary=True) as cursor:
+                    cursor.execute("""
+                        SELECT id_empleado, nombre_empleado, apellido_empleado
+                        FROM tbl_empleados 
+                        WHERE dni_empleado = %s
+                    """, (dni,))
+                    empleado_existente = cursor.fetchone()
+
+                    if empleado_existente:
+                        return jsonify({
+                            "success": True,
+                            "message": f"DNI ya registrado para: {empleado_existente['nombre_empleado']}{empleado_existente['apellido_empleado']}",
+                            "empleado_existente": empleado_existente                
+                        }), 409 #Conflict
+                    
+        except Exception as e:
+            print(f"Error verificando DNI existente: {e}")
+    
+        print(f"🔍 Consultando DNI en API externa: {dni}")
+        resultado = consultar_dni_api(dni)
+
+        if resultado['success']:
+            return jsonify({
+                "success": True,
+                "message": "Datos encontrados",
+                "data": resultado['data']
+            }), 200
+        else:
+            return jsonify({
+                    "success": False,
+                    "message": resultado['message']
+            }), 404
+
+    except Exception as e:
+        print(f"Error en api_consultar_dni: {e}")
+        return jsonify({
+            "success": False,
+            "message": "Error interno del servidor" 
+        }), 500
+
+@app.route('/api/test-dni/<dni>', methods=['GET'])
+def api_test_dni(dni):
+    if 'conectado' not in session:
+        return jsonify({"success": False, "message": "No autorizado"}), 401
+    resultado = consultar_dni_api(dni)
+    return jsonify(resultado)
 
 
 @app.route('/borrar-usuario/<string:id>', methods=['GET'])

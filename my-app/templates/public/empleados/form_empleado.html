@@ -6,6 +6,63 @@
 <link
   rel="stylesheet"
   href="{{ url_for('static', filename ='assets/css/file.css') }}" />
+<style>
+  .dni-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 30px;
+    color: white;
+  }
+  
+  .dni-input-container {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 20px;
+    backdrop-filter: blur(10px);
+  }
+  
+  .btn-consultar-dni {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    border: none;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    min-height: 45px;
+  }
+  
+  .btn-consultar-dni:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+  }
+  
+  .btn-consultar-dni:disabled {
+    opacity: 0.6;
+    transform: none;
+  }
+  
+  .field-autocompleted {
+    background-color: #d4edda !important;
+    border-color: #28a745 !important;
+    transition: all 0.3s ease;
+  }
+  
+  .loading-spinner {
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #007bff;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    margin-right: 8px;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+</style>
 {% endblock %}
 
 <!--Inicio del block-->
@@ -20,12 +77,66 @@
 
   <div class="row justify-content-center mb-2">
     <div class="col-md-10">
+      
+      <!-- Sección DNI -->
+      <div class="dni-section">
+        <div class="row align-items-center mb-3">
+          <div class="col">
+            <h5 class="text-white mb-0">
+              <i class="bi bi-person-vcard"></i> 
+              Consulta de Documento Nacional de Identidad
+            </h5>
+            <small class="text-white-50">Complete automáticamente los datos del empleado</small>
+          </div>
+        </div>
+        
+        <div class="dni-input-container">
+          <div class="row align-items-end">
+            <div class="col-md-8">
+              <label for="dni_empleado" class="form-label text-white fw-bold">
+                <i class="bi bi-card-text"></i> DNI (8 dígitos)
+              </label>
+              <input type="text" 
+                     class="form-control form-control-lg" 
+                     id="dni_empleado" 
+                     name="dni_empleado" 
+                     placeholder="Ej: 12345678" 
+                     maxlength="8"
+                     autocomplete="off">
+              <div class="form-text text-white-50">
+                <i class="bi bi-info-circle"></i> 
+                Ingrese el DNI para autocompletar nombres y apellidos
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="d-grid">
+                <button type="button" 
+                        class="btn btn-success btn-lg btn-consultar-dni" 
+                        id="btn-consultar-dni"
+                        disabled>
+                  <i class="bi bi-search"></i> Consultar DNI
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Contenedor para mensajes -->
+          <div id="dni-messages" class="mt-3"></div>
+        </div>
+      </div>
+
+      <!-- Formulario Original -->
       <form
         class="form-horizontal mx-auto"
         method="POST"
         action="/form-registrar-empleado"
         autocomplete="off"
-        enctype="multipart/form-data">
+        enctype="multipart/form-data"
+        id="form-empleado">
+        
+        <!-- Campo DNI oculto -->
+        <input type="hidden" name="dni_empleado" id="dni_empleado_hidden">
+        
         <div class="card-body">
           <div class="row">
             <div class="col-md-6">
@@ -35,6 +146,7 @@
               <input
                 type="text"
                 name="nombre_empleado"
+                id="nombre_empleado"
                 class="form-control"
                 required />
             </div>
@@ -46,11 +158,27 @@
                 class="form-control"
                 type="text"
                 name="apellido_empleado"
+                id="apellido_empleado"
                 required />
             </div>
           </div>
 
+          <!-- Nueva fila para fecha de nacimiento y sexo -->
           <div class="row mt-2">
+            <div class="col-md-6">
+              <label for="fecha_nacimiento" class="form-label">
+                Fecha de Nacimiento
+              </label>
+              <input
+                class="form-control"
+                type="date"
+                name="fecha_nacimiento"
+                id="fecha_nacimiento" />
+              <div class="form-text">
+                <i class="bi bi-info-circle"></i> 
+                Se autocompletará con la consulta DNI
+              </div>
+            </div>
             <div class="col-md-6">
               <label for="sexo_empleado" class="form-label">
                 Sexo del empleado
@@ -58,12 +186,17 @@
               <select
                 class="form-select"
                 name="sexo_empleado"
+                id="sexo_empleado"
                 aria-label="Default select example">
                 <option selected>Seleccione</option>
                 <option value="1">Masculino</option>
                 <option value="2">Femenino</option>
               </select>
             </div>
+          </div>
+
+          <!-- Nueva fila para teléfono y dirección -->
+          <div class="row mt-2">
             <div class="col-md-6">
               <label for="telefono_empleado" class="form-label">
                 Telefono del empleado
@@ -72,6 +205,19 @@
                 class="form-control"
                 type="text"
                 name="telefono_empleado"
+                id="telefono_empleado"
+                required />
+            </div>
+            <div class="col-md-6">
+              <label for="direccion_empleado" class="form-label">
+                Dirección del empleado
+              </label>
+              <input
+                class="form-control"
+                type="text"
+                name="direccion_empleado"
+                id="direccion_empleado"
+                placeholder="Ingrese la dirección completa"
                 required />
             </div>
           </div>
@@ -85,6 +231,7 @@
                 class="form-control"
                 type="email"
                 name="email_empleado"
+                id="email_empleado"
                 required />
             </div>
             <div class="col-md-6">
@@ -95,6 +242,7 @@
                 class="form-control"
                 type="text"
                 name="profesion_empleado"
+                id="profesion_empleado"
                 required />
             </div>
           </div>
@@ -138,6 +286,11 @@
           </div>
 
           <div class="mb-3 mt-4 text-center">
+            <button type="button" 
+                    class="btn rounded-pill btn-outline-secondary me-3"
+                    onclick="limpiarFormularioCompleto()">
+              <i class="bi bi-arrow-counterclockwise"></i> Limpiar
+            </button>
             <button type="submit" class="btn rounded-pill btn-primary">
               Guardar registro ahora
               <i class="bi bi-arrow-clockwise"></i>
@@ -148,6 +301,352 @@
     </div>
   </div>
 </div>
-{% endblock %} {% block customJS %}
+
+<!-- Modal para empleado existente -->
+<div class="modal fade" id="modalEmpleadoExistente" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-warning">
+        <h5 class="modal-title text-dark">
+          <i class="bi bi-exclamation-triangle"></i> DNI Ya Registrado
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="contenidoEmpleadoExistente"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050;">
+  <div id="toastContainer"></div>
+</div>
+
+{% endblock %} 
+
+{% block customJS %}
 <script src="{{ url_for('static', filename ='assets/customJS/file.js') }}"></script>
+<script>
+/**
+ * DNI Manager para Sistema de Empleados
+ * Integrado con formulario existente
+ */
+class DNIManager {
+    constructor() {
+        this.dniInput = null;
+        this.consultarBtn = null;
+        this.loading = false;
+        this.init();
+    }
+
+    init() {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.setupEventListeners());
+        } else {
+            this.setupEventListeners();
+        }
+    }
+
+    setupEventListeners() {
+        this.dniInput = document.getElementById('dni_empleado');
+        this.consultarBtn = document.getElementById('btn-consultar-dni');
+
+        if (this.dniInput) {
+            this.dniInput.addEventListener('input', (e) => this.validarDNI(e));
+            this.dniInput.addEventListener('keypress', (e) => this.soloNumeros(e));
+            this.dniInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.consultarDNI();
+                }
+            });
+        }
+
+        if (this.consultarBtn) {
+            this.consultarBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.consultarDNI();
+            });
+        }
+    }
+
+    soloNumeros(e) {
+        const char = String.fromCharCode(e.which);
+        if (!/[0-9]/.test(char)) {
+            e.preventDefault();
+        }
+    }
+
+    validarDNI(e) {
+        const dni = e.target.value;
+        this.clearMessages();
+
+        if (dni.length > 8) {
+            e.target.value = dni.substring(0, 8);
+        }
+
+        if (dni.length > 0 && dni.length < 8) {
+            this.showMessage('DNI debe tener 8 dígitos', 'warning');
+        }
+
+        // Actualizar campo oculto
+        document.getElementById('dni_empleado_hidden').value = dni;
+
+        // Habilitar/deshabilitar botón
+        if (this.consultarBtn) {
+            this.consultarBtn.disabled = dni.length !== 8;
+        }
+    }
+
+    clearMessages() {
+        const container = document.getElementById('dni-messages');
+        if (container) {
+            container.innerHTML = '';
+        }
+    }
+
+    showMessage(message, type = 'info') {
+        const container = document.getElementById('dni-messages');
+        if (!container) return;
+
+        const alertClass = {
+            'success': 'alert-success',
+            'error': 'alert-danger',
+            'warning': 'alert-warning',
+            'info': 'alert-info'
+        };
+
+        const iconClass = {
+            'success': 'bi-check-circle',
+            'error': 'bi-exclamation-triangle',
+            'warning': 'bi-exclamation-triangle',
+            'info': 'bi-info-circle'
+        };
+
+        container.innerHTML = `
+            <div class="alert ${alertClass[type]} alert-dismissible fade show" role="alert">
+                <i class="bi ${iconClass[type]}"></i> ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+    }
+
+    async consultarDNI() {
+        if (this.loading) return;
+
+        const dni = this.dniInput?.value?.trim();
+        
+        if (!dni || dni.length !== 8) {
+            this.showMessage('Ingrese un DNI válido de 8 dígitos', 'warning');
+            return;
+        }
+
+        this.loading = true;
+        this.showLoading(true);
+        this.clearMessages();
+
+        try {
+            const response = await fetch('/api/consultar-dni', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ dni: dni })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                this.procesarRespuestaExitosa(data);
+            } else if (response.status === 409) {
+                // DNI ya registrado
+                this.showMessage(data.message, 'warning');
+                this.mostrarModalEmpleadoExistente(data.empleado_existente);
+            } else if (response.status === 404) {
+                this.showMessage(data.message || 'DNI no encontrado en la base de datos', 'error');
+            } else {
+                this.showMessage(data.message || 'Error al consultar DNI', 'error');
+            }
+
+        } catch (error) {
+            console.error('Error en consulta DNI:', error);
+            this.showMessage('Error de conexión. Intente nuevamente.', 'error');
+        } finally {
+            this.loading = false;
+            this.showLoading(false);
+        }
+    }
+
+    procesarRespuestaExitosa(data) {
+        this.showMessage('✅ Datos encontrados correctamente', 'success');
+        this.autocompletarFormulario(data.data);
+        this.mostrarToast('Éxito', `Datos de ${data.data.nombre_completo} cargados automáticamente`, 'success');
+    }
+
+    autocompletarFormulario(datos) {
+        const campos = {
+            'nombre_empleado': datos.nombres,
+            'apellido_empleado': datos.apellidos,
+            'fecha_nacimiento': datos.fecha_nacimiento
+        };
+
+        Object.entries(campos).forEach(([campo, valor]) => {
+            const input = document.getElementById(campo);
+            if (input && valor) {
+                // Para fecha de nacimiento, convertir formato si es necesario
+                if (campo === 'fecha_nacimiento') {
+                    // Si viene en formato DD/MM/YYYY, convertir a YYYY-MM-DD para input type="date"
+                    if (valor.includes('/')) {
+                        const partes = valor.split('/');
+                        if (partes.length === 3) {
+                            valor = `${partes[2]}-${partes[1].padStart(2, '0')}-${partes[0].padStart(2, '0')}`;
+                        }
+                    }
+                }
+                
+                input.value = valor;
+                input.classList.add('field-autocompleted');
+                
+                // Efecto visual
+                setTimeout(() => {
+                    input.classList.remove('field-autocompleted');
+                }, 3000);
+            }
+        });
+    }
+
+    mostrarModalEmpleadoExistente(empleado) {
+        if (!empleado) return;
+
+        const modalContent = document.getElementById('contenidoEmpleadoExistente');
+        if (modalContent) {
+            modalContent.innerHTML = `
+                <div class="alert alert-warning">
+                    <h6><i class="bi bi-person"></i> Empleado ya registrado:</h6>
+                    <p><strong>ID:</strong> ${empleado.id_empleado}</p>
+                    <p><strong>Nombre:</strong> ${empleado.nombre_empleado} ${empleado.apellido_empleado}</p>
+                    <hr>
+                    <p class="mb-0">Este DNI ya está asociado a un empleado en el sistema.</p>
+                </div>
+            `;
+
+            const modal = new bootstrap.Modal(document.getElementById('modalEmpleadoExistente'));
+            modal.show();
+        }
+    }
+
+    showLoading(show) {
+        if (this.consultarBtn) {
+            if (show) {
+                this.consultarBtn.disabled = true;
+                this.consultarBtn.innerHTML = '<div class="loading-spinner"></div> Consultando...';
+            } else {
+                this.consultarBtn.disabled = this.dniInput.value.length !== 8;
+                this.consultarBtn.innerHTML = '<i class="bi bi-search"></i> Consultar DNI';
+            }
+        }
+    }
+
+    mostrarToast(titulo, mensaje, tipo = 'info') {
+        const toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) return;
+
+        const toastId = 'toast_' + Date.now();
+        const bgClass = {
+            'success': 'bg-success',
+            'error': 'bg-danger',
+            'warning': 'bg-warning',
+            'info': 'bg-info'
+        };
+
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white ${bgClass[tipo]} border-0`;
+        toast.id = toastId;
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <strong>${titulo}</strong><br>${mensaje}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+
+        toastContainer.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+
+        // Auto remove
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 5000);
+    }
+}
+
+// Función para limpiar formulario completo
+function limpiarFormularioCompleto() {
+    // Limpiar DNI
+    const dniInput = document.getElementById('dni_empleado');
+    const dniHidden = document.getElementById('dni_empleado_hidden');
+    if (dniInput) dniInput.value = '';
+    if (dniHidden) dniHidden.value = '';
+
+    // Limpiar campos del formulario
+    const campos = ['nombre_empleado', 'apellido_empleado', 'fecha_nacimiento', 'telefono_empleado', 
+                   'direccion_empleado', 'email_empleado', 'profesion_empleado', 'salario_empleado'];
+    
+    campos.forEach(campo => {
+        const input = document.getElementById(campo);
+        if (input) {
+            input.value = '';
+            input.classList.remove('field-autocompleted');
+        }
+    });
+
+    // Limpiar select
+    const selectSexo = document.getElementById('sexo_empleado');
+    if (selectSexo) selectSexo.selectedIndex = 0;
+
+    // Limpiar archivo
+    const fotoInput = document.getElementById('imageUpload');
+    if (fotoInput) fotoInput.value = '';
+
+    // Limpiar mensajes
+    const messagesContainer = document.getElementById('dni-messages');
+    if (messagesContainer) messagesContainer.innerHTML = '';
+
+    // Deshabilitar botón consultar
+    const consultarBtn = document.getElementById('btn-consultar-dni');
+    if (consultarBtn) consultarBtn.disabled = true;
+
+    // Toast de confirmación
+    if (typeof dniManager !== 'undefined') {
+        dniManager.mostrarToast('Formulario limpiado', 'Todos los campos han sido reiniciados', 'info');
+    }
+}
+
+// Inicializar DNI Manager
+let dniManager;
+document.addEventListener('DOMContentLoaded', function() {
+    dniManager = new DNIManager();
+    
+    // Validación antes del envío
+    const form = document.getElementById('form-empleado');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const dni = document.getElementById('dni_empleado').value;
+            const dniHidden = document.getElementById('dni_empleado_hidden');
+            
+            if (dni && dniHidden) {
+                dniHidden.value = dni;
+            }
+        });
+    }
+});
+</script>
 {% endblock %}
