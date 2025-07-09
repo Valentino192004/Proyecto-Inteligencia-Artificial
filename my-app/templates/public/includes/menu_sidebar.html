@@ -49,7 +49,31 @@
       </a>
     </li>
     <!-- FIN MÓDULO DE ASISTENCIA -->
-    
+
+    <li
+      class="menu-item {% if request.path == '/asignacion' %} active {% endif %}">
+      <a href="/asignacion" class="menu-link">
+        <i class="menu-icon bi bi-calendar2-week"></i>
+        <div data-i18n="Asignacion">Asignación de turnos</div>
+      </a>
+    </li>
+
+    <li
+      class="menu-item {% if request.path == '/evaluacion' %} active {% endif %}">
+      <a href="/evaluacion" class="menu-link">
+        <i class="menu-icon bi bi-bar-chart-fill"></i>
+        <div data-i18n="Evaluacion">Evaluación de desempeño</div>
+      </a>
+    </li>
+
+    <li
+      class="menu-item {% if request.path == '/rotacion' %} active {% endif %}">
+      <a href="/rotacion" class="menu-link">
+        <i class="menu-icon bi bi-graph-down-arrow"></i>
+        <div data-i18n="Rotacion">Predicción de rotación de personal</div>
+      </a>
+    </li>
+
     <li
       class="menu-item {% if request.path == '/descargar-informe-empleados' %} active {% endif %}">
       <a href="/descargar-informe-empleados" class="menu-link">

@@ -1,0 +1,1189 @@
+{% extends 'public/base_cpanel.html' %}
+
+{% block customCSS %}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Predicción de Rotación - IA</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Taurus, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0d1117 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: rgba(26, 26, 46, 0.95);
+            border-radius: 30px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(220, 38, 38, 0.3);
+            backdrop-filter: blur(20px);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%);
+            color: white;
+            padding: 50px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+            animation: float 15s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .header h1 {
+            font-size: 3.2rem;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            color: #ffff;
+        }
+
+        .header p {
+            font-size: 1.3rem;
+            opacity: 0.95;
+            position: relative;
+            z-index: 1;
+        }
+
+        .content {
+            padding: 50px;
+        }
+
+        .status-bar {
+            background: rgba(220, 38, 38, 0.1);
+            border: 1px solid rgba(220, 38, 38, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #e2e8f0;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 35px;
+            margin-bottom: 50px;
+        }
+
+        .neural-panel {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-radius: 25px;
+            padding: 35px;
+            border: 2px solid #dc2626;
+            box-shadow: 0 15px 35px rgba(220, 38, 38, 0.2);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .neural-panel::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(220, 38, 38, 0.05), transparent);
+            animation: scan 8s linear infinite;
+        }
+
+        .neural-panel:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(220, 38, 38, 0.3);
+        }
+
+        @keyframes scan {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(0deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(360deg); }
+        }
+
+        .panel-title {
+            color: #dc2626;
+            font-size: 1.6rem;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 700;
+            color: #f1f5f9;
+            font-size: 1.1rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 16px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 2px solid #475569;
+            border-radius: 12px;
+            color: #e2e8f0;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #dc2626;
+            box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.2);
+            transform: scale(1.02);
+        }
+
+        .range-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .range-wrapper input {
+            flex: 1;
+        }
+
+        .range-value {
+            color: #dc2626;
+            font-weight: bold;
+            font-size: 1.2rem;
+            min-width: 60px;
+        }
+
+        .architecture-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .architecture-option {
+            background: rgba(15, 23, 42, 0.8);
+            border: 2px solid #475569;
+            border-radius: 12px;
+            padding: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .architecture-option::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(220, 38, 38, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .architecture-option:hover::before {
+            left: 100%;
+        }
+
+        .architecture-option:hover {
+            border-color: #dc2626;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(220, 38, 38, 0.2);
+        }
+
+        .architecture-option.active {
+            border-color: #dc2626;
+            background: rgba(220, 38, 38, 0.1);
+        }
+
+        .architecture-option h5 {
+            color: #dc2626;
+            margin-bottom: 8px;
+        }
+
+        .architecture-option p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+            border: none;
+            padding: 18px 36px;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            justify-content: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: 'absolute';
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 30px rgba(220, 38, 38, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .risk-indicators {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .risk-card {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            border-radius: 18px;
+            padding: 25px;
+            text-align: center;
+            border: 2px solid #334155;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .risk-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #dc2626, #b91c1c);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .risk-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .risk-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(220, 38, 38, 0.15);
+            border-color: #dc2626;
+        }
+
+        .risk-card i {
+            font-size: 2.8rem;
+            color: #dc2626;
+            margin-bottom: 15px;
+        }
+
+        .risk-card h3 {
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+            color: #e2e8f0;
+        }
+
+        .risk-card p {
+            color: #94a3b8;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .results-section {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-radius: 25px;
+            padding: 40px;
+            margin-top: 40px;
+            border: 2px solid #dc2626;
+            box-shadow: 0 20px 40px rgba(220, 38, 38, 0.2);
+            display: none;
+        }
+
+        .results-section.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 35px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #475569;
+        }
+
+        .results-header h3 {
+            color: #dc2626;
+            font-size: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .neural-status {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        .predictions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+        }
+
+        .employee-prediction {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid #334155;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .employee-prediction::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #dc2626, #b91c1c);
+        }
+
+        .employee-prediction:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px rgba(220, 38, 38, 0.2);
+        }
+
+        .prediction-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 25px;
+        }
+
+        .employee-details h4 {
+            color: #e2e8f0;
+            font-size: 1.4rem;
+            margin-bottom: 8px;
+        }
+
+        .employee-details p {
+            color: #94a3b8;
+            font-size: 1rem;
+        }
+
+        .risk-probability {
+            text-align: center;
+            padding: 20px;
+            background: rgba(220, 38, 38, 0.1);
+            border-radius: 15px;
+            border: 1px solid rgba(220, 38, 38, 0.3);
+            min-width: 120px;
+        }
+
+        .risk-probability h3 {
+            color: #dc2626;
+            font-size: 2.5rem;
+            margin-bottom: 5px;
+        }
+
+        .risk-probability p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .risk-factors {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .factor-item {
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #475569;
+        }
+
+        .factor-item h5 {
+            color: #dc2626;
+            margin-bottom: 8px;
+        }
+
+        .factor-item p {
+            color: #94a3b8;
+            font-size: 0.85rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 80px;
+            color: #94a3b8;
+        }
+
+        .loading i {
+            font-size: 4rem;
+            animation: spin 1s linear infinite;
+            margin-bottom: 25px;
+            color: #dc2626;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading h4 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+
+        .loading p {
+            opacity: 0.8;
+        }
+
+        .network-visualization {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid #dc2626;
+        }
+
+        .network-layers {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .network-layer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .neuron {
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            border-radius: 50%;
+            animation: neuron-pulse 2s infinite;
+        }
+
+        @keyframes neuron-pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+        }
+
+        .layer-label {
+            color: #94a3b8;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #dc2626, #b91c1c);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .optimization-panel {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            border: 1px solid #dc2626;
+        }
+
+        .optimization-panel h4 {
+            color: #dc2626;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #475569;
+        }
+
+        .metric-item:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            color: #94a3b8;
+        }
+
+        .metric-value {
+            color: #dc2626;
+            font-weight: bold;
+        }
+
+        @media (max-width: 1200px) {
+            .dashboard-layout {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .risk-indicators {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .predictions-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container">
+        <div class="header">
+            <h1><i class="fas fa-brain"></i> Predicción de Rotación Neural</h1>
+            <p>Análisis predictivo avanzado con TensorFlow y Keras para anticipar la rotación de personal</p>
+        </div>
+
+        <div class="content">
+            <div class="status-bar">
+                <div class="status-item">
+                    <div class="status-indicator"></div>
+                    <span>Sistema Activo</span>
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-database"></i>
+                    <span>Base de Datos Conectada</span>
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-memory"></i>
+                    <span>Modelo Cargado</span>
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-cloud"></i>
+                    <span>Cloud Ready</span>
+                </div>
+            </div>
+
+            <div class="risk-indicators">
+                <div class="risk-card">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3 id="riesgo-alto">23%</h3>
+                    <p>Riesgo Alto</p>
+                </div>
+                <div class="risk-card">
+                    <i class="fas fa-chart-line"></i>
+                    <h3 id="precision-modelo">97.3%</h3>
+                    <p>Precisión Modelo</p>
+                </div>
+                <div class="risk-card">
+                    <i class="fas fa-users"></i>
+                    <h3 id="empleados-analizados">156</h3>
+                    <p>Empleados Analizados</p>
+                </div>
+                <div class="risk-card">
+                    <i class="fas fa-clock"></i>
+                    <h3 id="tiempo-prediccion">2.1s</h3>
+                    <p>Tiempo Predicción</p>
+                </div>
+            </div>
+
+            <div class="dashboard-layout">
+                <div class="neural-panel">
+                    <h2 class="panel-title">
+                        <i class="fas fa-cogs"></i>
+                        Configuración del Modelo
+                    </h2>
+                    <div class="form-group">
+                        <label for="periodo_analisis">Período de Análisis:</label>
+                        <select id="periodo_analisis">
+                            <option value="6_meses">Últimos 6 meses</option>
+                            <option value="1_ano">Último año</option>
+                            <option value="2_anos">Últimos 2 años</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="departamento_pred">Departamento:</label>
+                        <select id="departamento_pred">
+                            <option value="todos">Todos</option>
+                            <option value="ventas">Ventas</option>
+                            <option value="produccion">Producción</option>
+                            <option value="administracion">Administración</option>
+                            <option value="logistica">Logística</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="umbral_riesgo">Umbral de Riesgo:</label>
+                        <div class="range-wrapper">
+                            <input type="range" id="umbral_riesgo" min="0" max="100" value="70">
+                            <span class="range-value" id="umbral_value">70%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="neural-panel">
+                    <h2 class="panel-title">
+                        <i class="fas fa-network-wired"></i>
+                        Arquitectura Neural
+                    </h2>
+                    <div class="architecture-selector">
+                        <div class="architecture-option active" data-arch="dense">
+                            <h5>Dense NN</h5>
+                            <p>Red Densa</p>
+                        </div>
+                        <div class="architecture-option" data-arch="lstm">
+                            <h5>LSTM</h5>
+                            <p>Memoria</p>
+                        </div>
+                        <div class="architecture-option" data-arch="cnn">
+                            <h5>CNN</h5>
+                            <p>Convolucional</p>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="epochs">Épocas de Entrenamiento:</label>
+                        <input type="number" id="epochs" min="10" max="1000" value="100">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="batch_size">Batch Size:</label>
+                        <select id="batch_size">
+                            <option value="16">16</option>
+                            <option value="32" selected>32</option>
+                            <option value="64">64</option>
+                            <option value="128">128</option>
+                        </select>
+                    </div>
+
+                    <div class="optimization-panel">
+                        <h4><i class="fas fa-chart-line"></i> Optimización</h4>
+                        <div class="metric-item">
+                            <span class="metric-label">Learning Rate:</span>
+                            <span class="metric-value">0.001</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Dropout:</span>
+                            <span class="metric-value">0.3</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Optimizer:</span>
+                            <span class="metric-value">Adam</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="neural-panel">
+                    <h2 class="panel-title">
+                        <i class="fas fa-play"></i>
+                        Ejecutar Predicción
+                    </h2>
+                    
+                    <div class="network-visualization">
+                        <div class="network-layers">
+                            <div class="network-layer">
+                                <div class="neuron"></div>
+                                <div class="neuron"></div>
+                                <div class="neuron"></div>
+                                <div class="layer-label">Input</div>
+                            </div>
+                            <div class="network-layer">
+                                <div class="neuron"></div>
+                                <div class="neuron"></div>
+                                <div class="neuron"></div>
+                                <div class="neuron"></div>
+                                <div class="layer-label">Hidden</div>
+                            </div>
+                            <div class="network-layer">
+                                <div class="neuron"></div>
+                                <div class="layer-label">Output</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="num_predicciones">Número de Predicciones:</label>
+                        <input type="number" id="num_predicciones" min="1" max="100" value="10">
+                    </div>
+
+                    <button class="btn" id="ejecutar-prediccion">
+                        <i class="fas fa-rocket"></i>
+                        Ejecutar Predicción
+                    </button>
+
+                    <div class="progress-bar" id="progress-bar" style="display: none;">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-section" id="results-section">
+                <div class="results-header">
+                    <h3>
+                        <i class="fas fa-chart-area"></i>
+                        Resultados de Predicción
+                    </h3>
+                    <div class="neural-status">
+                        <i class="fas fa-brain"></i>
+                        Sistema Activo
+                    </div>
+                </div>
+
+                <div class="predictions-grid" id="predictions-grid">
+                    <!-- Aquí se cargarán las predicciones dinámicamente -->
+                </div>
+            </div>
+        </div>
+</div>
+
+<div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toast-message">Predicción completada exitosamente</span>
+</div>
+{% endblock %}
+
+{% block customJS %}
+<script>
+        // Variables globales
+        let currentArchitecture = 'dense';
+        let isProcessing = false;
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeComponents();
+            setupEventListeners();
+            simulateRealTimeUpdates();
+        });
+
+        function initializeComponents() {
+            // Configurar el slider de umbral
+            const umbralSlider = document.getElementById('umbral_riesgo');
+            const umbralValue = document.getElementById('umbral_value');
+            
+            umbralSlider.addEventListener('input', function() {
+                umbralValue.textContent = this.value + '%';
+            });
+
+            // Configurar opciones de arquitectura
+            document.querySelectorAll('.architecture-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    document.querySelectorAll('.architecture-option').forEach(opt => 
+                        opt.classList.remove('active')
+                    );
+                    this.classList.add('active');
+                    currentArchitecture = this.dataset.arch;
+                    showToast(`Arquitectura cambiada a ${this.querySelector('h5').textContent}`);
+                });
+            });
+        }
+
+        function setupEventListeners() {
+            const executeButton = document.getElementById('ejecutar-prediccion');
+            executeButton.addEventListener('click', executePrediction);
+            
+            // Validación en tiempo real
+            document.querySelectorAll('input, select').forEach(input => {
+                input.addEventListener('change', validateInputs);
+            });
+        }
+
+        function validateInputs() {
+            const epochs = document.getElementById('epochs').value;
+            const numPredicciones = document.getElementById('num_predicciones').value;
+            const executeButton = document.getElementById('ejecutar-prediccion');
+            
+            if (epochs < 10 || epochs > 1000 || numPredicciones < 1 || numPredicciones > 100) {
+                executeButton.disabled = true;
+            } else {
+                executeButton.disabled = false;
+            }
+        }
+
+        function executePrediction() {
+            if (isProcessing) return;
+            
+            isProcessing = true;
+            const executeButton = document.getElementById('ejecutar-prediccion');
+            const progressBar = document.getElementById('progress-bar');
+            const progressFill = document.getElementById('progress-fill');
+            
+            executeButton.disabled = true;
+            executeButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+            
+            progressBar.style.display = 'block';
+            progressFill.style.width = '0%';
+            
+            // Simular proceso de predicción
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 30;
+                if (progress > 100) progress = 100;
+                
+                progressFill.style.width = progress + '%';
+                
+                if (progress >= 100) {
+                    clearInterval(progressInterval);
+                    setTimeout(() => {
+                        completePrediction();
+                    }, 500);
+                }
+            }, 200);
+        }
+
+        function completePrediction() {
+            const executeButton = document.getElementById('ejecutar-prediccion');
+            const progressBar = document.getElementById('progress-bar');
+            const resultsSection = document.getElementById('results-section');
+            
+            executeButton.disabled = false;
+            executeButton.innerHTML = '<i class="fas fa-rocket"></i> Ejecutar Predicción';
+            progressBar.style.display = 'none';
+            
+            // Mostrar resultados
+            generatePredictionResults();
+            resultsSection.classList.add('active');
+            
+            // Actualizar estadísticas
+            updateStatistics();
+            
+            showToast('Predicción completada exitosamente');
+            isProcessing = false;
+        }
+
+        function generatePredictionResults() {
+            const grid = document.getElementById('predictions-grid');
+            const numPredicciones = parseInt(document.getElementById('num_predicciones').value);
+            const umbral = parseInt(document.getElementById('umbral_riesgo').value);
+            
+            grid.innerHTML = '';
+            
+            const empleados = [
+                { nombre: 'María García', departamento: 'Ventas', experiencia: '3 años' },
+                { nombre: 'Carlos López', departamento: 'Producción', experiencia: '5 años' },
+                { nombre: 'Ana Martínez', departamento: 'Administración', experiencia: '2 años' },
+                { nombre: 'José Rodríguez', departamento: 'Logística', experiencia: '4 años' },
+                { nombre: 'Laura Sánchez', departamento: 'Ventas', experiencia: '1 año' },
+                { nombre: 'Miguel Torres', departamento: 'Producción', experiencia: '6 años' },
+                { nombre: 'Carmen Ruiz', departamento: 'Administración', experiencia: '3 años' },
+                { nombre: 'Pedro Jiménez', departamento: 'Logística', experiencia: '2 años' }
+            ];
+
+            for (let i = 0; i < Math.min(numPredicciones, 8); i++) {
+                const empleado = empleados[i];
+                const riesgo = Math.random() * 100;
+                const isHighRisk = riesgo > umbral;
+                
+                const predictionCard = createPredictionCard(empleado, riesgo, isHighRisk);
+                grid.appendChild(predictionCard);
+            }
+        }
+
+        function createPredictionCard(empleado, riesgo, isHighRisk) {
+            const card = document.createElement('div');
+            card.className = 'employee-prediction';
+            
+            const factores = generateRiskFactors();
+            
+            card.innerHTML = `
+                <div class="prediction-header">
+                    <div class="employee-details">
+                        <h4>${empleado.nombre}</h4>
+                        <p>${empleado.departamento} • ${empleado.experiencia}</p>
+                    </div>
+                    <div class="risk-probability">
+                        <h3 style="color: ${isHighRisk ? '#dc2626' : '#10b981'}">${riesgo.toFixed(1)}%</h3>
+                        <p>Riesgo de Rotación</p>
+                    </div>
+                </div>
+                
+                <div class="risk-factors">
+                    <div class="factor-item">
+                        <h5>Satisfacción</h5>
+                        <p>${factores.satisfaccion}%</p>
+                    </div>
+                    <div class="factor-item">
+                        <h5>Desempeño</h5>
+                        <p>${factores.desempeño}%</p>
+                    </div>
+                    <div class="factor-item">
+                        <h5>Estabilidad</h5>
+                        <p>${factores.estabilidad}%</p>
+                    </div>
+                </div>
+                
+                <div class="network-visualization">
+                    <div class="network-layers">
+                        <div class="network-layer">
+                            <div class="neuron"></div>
+                            <div class="neuron"></div>
+                            <div class="neuron"></div>
+                            <div class="layer-label">Features</div>
+                        </div>
+                        <div class="network-layer">
+                            <div class="neuron"></div>
+                            <div class="neuron"></div>
+                            <div class="layer-label">Hidden</div>
+                        </div>
+                        <div class="network-layer">
+                            <div class="neuron"></div>
+                            <div class="layer-label">Prediction</div>
+                        </div>
+                    </div>
+                    <div style="text-align: center; margin-top: 10px;">
+                        <small style="color: #94a3b8;">Arquitectura: ${currentArchitecture.toUpperCase()}</small>
+                    </div>
+                </div>
+            `;
+            return card;
+        }
+
+        function generateRiskFactors() {
+            return {
+                satisfaccion: (Math.random() * 100).toFixed(1),
+                desempeño: (Math.random() * 100).toFixed(1),
+                estabilidad: (Math.random() * 100).toFixed(1)
+            };
+        }
+
+        function updateStatistics() {
+            const estadisticas = {
+                riesgoAlto: (Math.random() * 30 + 10).toFixed(1),
+                precision: (Math.random() * 5 + 95).toFixed(1),
+                empleados: Math.floor(Math.random() * 50 + 150),
+                tiempo: (Math.random() * 2 + 1).toFixed(1)
+            };
+
+            animateNumber('riesgo-alto', estadisticas.riesgoAlto, '%');
+            animateNumber('precision-modelo', estadisticas.precision, '%');
+            animateNumber('empleados-analizados', estadisticas.empleados, '');
+            animateNumber('tiempo-prediccion', estadisticas.tiempo, 's');
+        }
+
+        function animateNumber(elementId, targetValue, suffix) {
+            const element = document.getElementById(elementId);
+            const startValue = parseFloat(element.textContent) || 0;
+            const target = parseFloat(targetValue);
+            const increment = (target - startValue) / 20;
+
+            let current = startValue;
+            const timer = setInterval(() => {
+                current += increment;
+                if ((increment > 0 && current >= target) || (increment < 0 && current <= target)) {
+                    current = target;
+                    clearInterval(timer);
+                }
+                element.textContent = current.toFixed(1) + suffix;
+            }, 50);
+        }
+
+        function simulateRealTimeUpdates() {
+            setInterval(() => {
+                if (!isProcessing) {
+                    updateStatistics();
+                }
+            }, 30000); // Actualizar cada 30 segundos
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+
+            toastMessage.textContent = message;
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Efectos visuales adicionales
+        function addVisualEffects() {
+            // Efecto de glitch ocasional en los números
+            setInterval(() => {
+                const cards = document.querySelectorAll('.risk-card h3');
+                if (Math.random() < 0.1) { // 10% chance
+                    const randomCard = cards[Math.floor(Math.random() * cards.length)];
+                    const originalText = randomCard.textContent;
+                    randomCard.style.color = '#dc2626';
+                    randomCard.textContent = '???';
+                    setTimeout(() => {
+                        randomCard.style.color = '#e2e8f0';
+                        randomCard.textContent = originalText;
+                    }, 200);
+                }
+            }, 5000);
+        }
+
+        // Inicializar efectos visuales
+        setTimeout(addVisualEffects, 1000);
+
+        // Agregar listener para teclas de acceso rápido
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                if (!isProcessing) {
+                    executePrediction();
+                }
+            }
+        });
+
+        // Simulación de datos en tiempo real
+        function simulateRealTimeData() {
+            const statusIndicators = document.querySelectorAll('.status-indicator');
+            statusIndicators.forEach(indicator => {
+                setInterval(() => {
+                    const colors = ['#10b981', '#f59e0b', '#ef4444'];
+                    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                    indicator.style.background = randomColor;
+                }, Math.random() * 5000 + 2000);
+            });
+        }
+
+        // Inicializar simulación de datos
+        setTimeout(simulateRealTimeData, 2000);
+</script>
+{% endblock %}

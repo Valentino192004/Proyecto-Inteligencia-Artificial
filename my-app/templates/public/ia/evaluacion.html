@@ -1,0 +1,646 @@
+{% extends 'public/base_cpanel.html' %}
+
+{% block customCSS %}
+<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación de Desempeño - IA</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #e2e8f0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(15, 23, 42, 0.95);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            border: 1px solid #334155;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            border-radius: 24px 24px 0 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            animation: slide 30s linear infinite;
+        }
+
+        @keyframes slide {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100px); }
+        }
+
+        .header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+            color: white;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .control-panel {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid #475569;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .metrics-panel {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid #475569;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .panel-title {
+            color: #10b981;
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #cbd5e1;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 14px;
+            background: #0f172a;
+            border: 2px solid #475569;
+            border-radius: 10px;
+            color: #e2e8f0;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(16, 185, 129, 0.3);
+        }
+
+        .model-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .model-option {
+            background: #0f172a;
+            border: 2px solid #475569;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .model-option:hover {
+            border-color: #10b981;
+            transform: translateY(-2px);
+        }
+
+        .model-option.active {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .model-option h4 {
+            color: #10b981;
+            margin-bottom: 8px;
+        }
+
+        .model-option p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .metric-card {
+            background: #0f172a;
+            border: 1px solid #475569;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: scale(1.05);
+        }
+
+        .metric-card i {
+            font-size: 2.5rem;
+            color: #10b981;
+            margin-bottom: 15px;
+        }
+
+        .metric-card h3 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            color: #e2e8f0;
+        }
+
+        .metric-card p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .results-section {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border-radius: 20px;
+            padding: 35px;
+            margin-top: 30px;
+            border: 1px solid #475569;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #475569;
+        }
+
+        .results-header h3 {
+            color: #10b981;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .performance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+        }
+
+        .employee-performance {
+            background: #0f172a;
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #475569;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .employee-performance::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, #10b981, #059669);
+        }
+
+        .employee-performance:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        }
+
+        .employee-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .employee-info h4 {
+            color: #e2e8f0;
+            font-size: 1.3rem;
+            margin-bottom: 5px;
+        }
+
+        .employee-info p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .performance-score {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .performance-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .mini-metric {
+            text-align: center;
+            padding: 15px;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .mini-metric h5 {
+            color: #10b981;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .mini-metric p {
+            color: #94a3b8;
+            font-size: 0.8rem;
+        }
+
+        .progress-bar {
+            background: #334155;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+            transition: width 0.3s ease;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #94a3b8;
+        }
+
+        .loading i {
+            font-size: 3rem;
+            animation: pulse 2s infinite;
+            margin-bottom: 20px;
+            color: #10b981;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .prediction-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .prediction-high {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .prediction-medium {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .prediction-low {
+            background: rgba(16, 185, 129, 0.2);
+            color: #6ee7b7;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container">
+        <div class="header">
+            <h1><i class="fas fa-chart-line"></i> Evaluación de Desempeño IA</h1>
+            <p>Análisis predictivo del rendimiento empleado mediante KNN y Random Forest</p>
+        </div>
+
+        <div class="content">
+            <div class="dashboard-grid">
+                <div class="control-panel">
+                    <h2 class="panel-title">
+                        <i class="fas fa-sliders-h"></i>
+                        Configuración de Análisis
+                    </h2>
+                    <div class="form-group">
+                        <label>Modelo de IA:</label>
+                        <div class="model-selector">
+                            <div class="model-option active" data-model="knn">
+                                <h4>K-NN</h4>
+                                <p>K-Nearest Neighbors</p>
+                            </div>
+                            <div class="model-option" data-model="rf">
+                                <h4>Random Forest</h4>
+                                <p>Ensemble Learning</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="empleado_especifico">Empleado Específico:</label>
+                        <select id="empleado_especifico">
+                            <option value="">Todos los empleados</option>
+                            <option value="ana_garcia">Ana García</option>
+                            <option value="carlos_rodriguez">Carlos Rodríguez</option>
+                            <option value="maria_lopez">María López</option>
+                            <option value="jorge_martinez">Jorge Martínez</option>
+                        </select>
+                    </div>
+
+                    <button class="btn" onclick="ejecutarAnalisis()">
+                        <i class="fas fa-brain"></i> Ejecutar Análisis IA
+                    </button>
+                </div>
+
+                <div class="metrics-panel">
+                    <h2 class="panel-title">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Métricas del Modelo
+                    </h2>
+                    
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <i class="fas fa-bullseye"></i>
+                            <h3>94.2%</h3>
+                            <p>Precisión</p>
+                        </div>
+                        <div class="metric-card">
+                            <i class="fas fa-search"></i>
+                            <h3>91.8%</h3>
+                            <p>Recall</p>
+                        </div>
+                        <div class="metric-card">
+                            <i class="fas fa-balance-scale"></i>
+                            <h3>93.0%</h3>
+                            <p>F1-Score</p>
+                        </div>
+                        <div class="metric-card">
+                            <i class="fas fa-clock"></i>
+                            <h3>0.3s</h3>
+                            <p>Tiempo Proc.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-section" id="results" style="display: none;">
+                <div class="results-header">
+                    <h3><i class="fas fa-analytics"></i> Resultados del Análisis</h3>
+                    <div class="prediction-badge prediction-low">
+                        <i class="fas fa-check-circle"></i>
+                        Modelo: K-NN Activo
+                    </div>
+                </div>
+                <div id="results-content"></div>
+            </div>
+        </div>
+</div>
+</html> for="periodo">Período de Evaluación:</label>
+                        <select id="periodo">
+                            <option value="mensual">Último Mes</option>
+                            <option value="trimestral">Último Trimestre</option>
+                            <option value="semestral">Último Semestre</option>
+                            <option value="anual">Último Año</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="departamento">Departamento:</label>
+                        <select id="departamento">
+                            <option value="todos">Todos los departamentos</option>
+                            <option value="ventas">Ventas</option>
+                            <option value="produccion">Producción</option>
+                            <option value="administracion">Administración</option>
+                            <option value="logistica">Logística</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+{% endblock %}
+
+{% block customJS %}
+<script>
+        let selectedModel = 'knn';
+
+        // Selector de modelo
+        document.querySelectorAll('.model-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.model-option').forEach(o => o.classList.remove('active'));
+                this.classList.add('active');
+                selectedModel = this.dataset.model;
+            });
+        });
+
+        function ejecutarAnalisis() {
+            const resultsSection = document.getElementById('results');
+            const resultsContent = document.getElementById('results-content');
+
+            // Mostrar loading
+            resultsContent.innerHTML = `
+                <div class="loading">
+                    <i class="fas fa-cog"></i>
+                    <p>Procesando con ${selectedModel === 'knn' ? 'K-Nearest Neighbors' : 'Random Forest'}...</p>
+                    <p>Analizando patrones de rendimiento y predictores de desempeño</p>
+                </div>
+            `;
+            resultsSection.style.display = 'block';
+
+            // Simular procesamiento
+            setTimeout(() => {
+                const empleados = [
+                    { 
+                        nombre: 'Ana García', 
+                        departamento: 'Ventas', 
+                        score: 92.5,
+                        productividad: 94,
+                        calidad: 91,
+                        puntualidad: 88,
+                        prediccion: 'high',
+                        tendencia: 'Excelente'
+                    },
+                    { 
+                        nombre: 'Carlos Rodríguez', 
+                        departamento: 'Producción', 
+                        score: 87.2,
+                        productividad: 89,
+                        calidad: 86,
+                        puntualidad: 92,
+                        prediccion: 'medium',
+                        tendencia: 'Buena'
+                    },
+                    { 
+                        nombre: 'María López', 
+                        departamento: 'Administración', 
+                        score: 95.1,
+                        productividad: 96,
+                        calidad: 94,
+                        puntualidad: 95,
+                        prediccion: 'high',
+                        tendencia: 'Excepcional'
+                    },
+                    { 
+                        nombre: 'Jorge Martínez', 
+                        departamento: 'Logística', 
+                        score: 78.9,
+                        productividad: 82,
+                        calidad: 76,
+                        puntualidad: 79,
+                        prediccion: 'low',
+                        tendencia: 'Necesita Mejora'
+                    }
+                ];
+
+                let html = '<div class="performance-grid">';
+                empleados.forEach(emp => {
+                    const predictionClass = `prediction-${emp.prediccion}`;
+                    const predictionText = emp.prediccion === 'high' ? 'Alto Rendimiento' : 
+                                        emp.prediccion === 'medium' ? 'Rendimiento Medio' : 'Bajo Rendimiento';
+                    const predictionIcon = emp.prediccion === 'high' ? 'fas fa-arrow-up' : 
+                                        emp.prediccion === 'medium' ? 'fas fa-minus' : 'fas fa-arrow-down';
+
+                    html += `
+                        <div class="employee-performance">
+                            <div class="employee-header">
+                                <div class="employee-info">
+                                    <h4>${emp.nombre}</h4>
+                                    <p>${emp.departamento}</p>
+                                </div>
+                                <div class="performance-score">${emp.score}%</div>
+                            </div>
+                            <div class="performance-metrics">
+                                <div class="mini-metric">
+                                    <h5>${emp.productividad}%</h5>
+                                    <p>Productividad</p>
+                                </div>
+                                <div class="mini-metric">
+                                    <h5>${emp.calidad}%</h5>
+                                    <p>Calidad</p>
+                                </div>
+                                <div class="mini-metric">
+                                    <h5>${emp.puntualidad}%</h5>
+                                    <p>Puntualidad</p>
+                                </div>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${emp.score}%"></div>
+                            </div>
+                            <div class="prediction-badge ${predictionClass}">
+                                <i class="${predictionIcon}"></i>
+                                ${predictionText}
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+
+                resultsContent.innerHTML = html;
+            }, 2500);
+        }
+</script>
+{% endblock %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+   
+</head>
+
+

@@ -1,0 +1,1262 @@
+{% extends "public/base_cpanel.html" %}
+
+{% block customCSS %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asignación de Turnos - IA Avanzada</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            --danger-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --white: #FFFFFF
+            --shadow-light: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --shadow-medium: 0 15px 40px rgba(0, 0, 0, 0.15);
+            --shadow-heavy: 0 25px 60px rgba(0, 0, 0, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Particles Background */
+        .particles-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        /* Glassmorphism Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: var(--shadow-heavy);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Advanced Header */
+        .header {
+            background: var(--secondary-gradient);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100px;
+            background: linear-gradient(45deg, transparent 49%, rgba(255,255,255,0.1) 50%, transparent 51%);
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes shimmer {
+            0%, 100% { transform: translateX(-100%); }
+            50% { transform: translateX(100%); }
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            color: var(--white);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+            font-weight: 400;
+        }
+
+        /* AI Status Indicator */
+        .ai-status {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--success-gradient);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ai-status .pulse {
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Content Area */
+        .content {
+            padding: 50px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Enhanced Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s;
+        }
+
+        .stat-card:hover::before {
+            left: 100%;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+
+        .stat-card i {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            background: var(--warning-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-card h4 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            color: var(--white);
+        }
+
+        .stat-card p {
+            font-size: 1rem;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+
+        /* Advanced Control Cards */
+        .controls-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .control-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 35px;
+            box-shadow: var(--shadow-light);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .control-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--secondary-gradient);
+            border-radius: 20px 20px 0 0;
+        }
+
+        .control-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .control-card h3 {
+            color: var(--text-primary);
+            margin-bottom: 25px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .control-card h3 i {
+            background: var(--secondary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 1.2rem;
+        }
+
+        /* Enhanced Form Elements */
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        /* Advanced Range Slider */
+        .range-container {
+            position: relative;
+            margin: 20px 0;
+        }
+
+        .range-slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(to right, #e5e7eb 0%, #4f46e5 var(--value, 70%), #e5e7eb var(--value, 70%), #e5e7eb 100%);
+            outline: none;
+            transition: all 0.3s ease;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--secondary-gradient);
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .range-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        .range-value {
+            position: absolute;
+            top: -35px;
+            left: var(--thumb-pos, 70%);
+            transform: translateX(-50%);
+            background: var(--secondary-gradient);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            pointer-events: none;
+        }
+
+        .range-value::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 4px solid #4f46e5;
+        }
+
+        /* Advanced Button */
+        .btn {
+            background: var(--secondary-gradient);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
+        }
+
+        /* Advanced Results Section */
+        .results-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: var(--shadow-light);
+            margin-top: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .results-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--success-gradient);
+            border-radius: 20px 20px 0 0;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(79, 70, 229, 0.1);
+        }
+
+        .results-header h3 {
+            color: var(--text-primary);
+            font-size: 1.8rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .results-header h3 i {
+            background: var(--success-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .filter-tab {
+            padding: 8px 16px;
+            background: rgba(79, 70, 229, 0.1);
+            border: 1px solid rgba(79, 70, 229, 0.2);
+            border-radius: 20px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-tab.active,
+        .filter-tab:hover {
+            background: var(--secondary-gradient);
+            color: white;
+        }
+
+        /* Enhanced Employee Cards */
+        .employee-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(248,250,252,0.9) 100%);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .employee-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--success-gradient);
+            transition: width 0.3s ease;
+        }
+
+        .employee-card:hover::before {
+            width: 8px;
+        }
+
+        .employee-card:hover {
+            transform: translateX(8px) translateY(-2px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .employee-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .employee-details {
+            flex: 1;
+        }
+
+        .employee-details h4 {
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .employee-details p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .employee-stats {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .mini-stat {
+            background: rgba(79, 70, 229, 0.1);
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .score-badge {
+            background: var(--success-gradient);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 1rem;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .score-badge::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.6s;
+        }
+
+        .score-badge:hover::before {
+            left: 100%;
+        }
+
+        /* Advanced Loading Animation */
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: var(--text-secondary);
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(79, 70, 229, 0.1);
+            border-top: 4px solid #4f46e5;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        .loading-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .loading-dots {
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .loading-dot {
+            width: 8px;
+            height: 8px;
+            background: #4f46e5;
+            border-radius: 50%;
+            animation: bounce 1.4s ease-in-out infinite both;
+        }
+
+        .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(79, 70, 229, 0.1);
+            border-radius: 4px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--secondary-gradient);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+
+        /* AI Thinking Animation */
+        .ai-thinking {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .thinking-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .thinking-dot {
+            width: 6px;
+            height: 6px;
+            background: #4f46e5;
+            border-radius: 50%;
+            animation: thinking 1.4s ease-in-out infinite;
+        }
+
+        .thinking-dot:nth-child(1) { animation-delay: 0s; }
+        .thinking-dot:nth-child(2) { animation-delay: 0.2s; }
+        .thinking-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes thinking {
+            0%, 60%, 100% { transform: scale(1); opacity: 0.5; }
+            30% { transform: scale(1.2); opacity: 1; }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .content { padding: 30px; }
+            .controls-section { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+            .header h1 { font-size: 2rem; }
+            .employee-info { flex-direction: column; align-items: flex-start; }
+        }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="particles-bg" id="particles"></div>
+    <div class="container">
+        <div class="header">
+            <div class="ai-status">
+                <div class="pulse"></div>
+                IA Activa
+            </div>
+            <h1><i class="fas fa-brain"></i> Asignación Inteligente de Turnos</h1>
+            <p>Sistema de asignación basado en IA con análisis avanzado de desempeño y disponibilidad</p>
+        </div>
+
+        <div class="content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <i class="fas fa-users"></i>
+                    <h4 id="activeEmployees">24</h4>
+                    <p>Empleados Activos</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-clock"></i>
+                    <h4 id="availableShifts">3</h4>
+                    <p>Turnos Disponibles</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-chart-line"></i>
+                    <h4 id="aiEfficiency">94%</h4>
+                    <p>Eficiencia IA</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-calendar-check"></i>
+                    <h4 id="todayAssignments">15</h4>
+                    <p>Asignaciones Hoy</p>
+                </div>
+            </div>
+
+            <div class="controls-section">
+                <div class="control-card">
+                    <h3><i class="fas fa-cog"></i> Configuración de Asignación</h3>
+                    <div class="form-group">
+                        <label for="fecha">Fecha del Turno:</label>
+                        <input type="date" id="fecha" name="fecha">
+                    </div>
+                    <div class="form-group">
+                        <label for="turno">Tipo de Turno:</label>
+                        <select id="turno" name="turno">
+                            <option value="">Seleccionar turno</option>
+                            <option value="mañana">Mañana (06:00 - 14:00)</option>
+                            <option value="tarde">Tarde (14:00 - 22:00)</option>
+                            <option value="noche">Noche (22:00 - 06:00)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="departamento">Departamento:</label>
+                        <select id="departamento" name="departamento">
+                            <option value="">Todos los departamentos</option>
+                            <option value="ventas">Ventas</option>
+                            <option value="produccion">Producción</option>
+                            <option value="administracion">Administración</option>
+                            <option value="logistica">Logística</option>
+                            <option value="rrhh">Recursos Humanos</option>
+                            <option value="it">Tecnología</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="min_empleados">Mínimo Empleados:</label>
+                        <input type="number" id="min_empleados" name="min_empleados" min="1" max="10" value="3">
+                    </div>
+                </div>
+
+                <div class="control-card">
+                    <h3><i class="fas fa-brain"></i> Parámetros de IA Avanzados</h3>
+                    <div class="form-group">
+                        <label for="peso_desempeno">Peso Desempeño:</label>
+                        <div class="range-container">
+                            <input type="range" id="peso_desempeno" name="peso_desempeno" min="0" max="100" value="70" class="range-slider">
+                            <div class="range-value" id="peso_desempeno_value">70%</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="peso_disponibilidad">Peso Disponibilidad:</label>
+                        <div class="range-container">
+                            <input type="range" id="peso_disponibilidad" name="peso_disponibilidad" min="0" max="100" value="30" class="range-slider">
+                            <div class="range-value" id="peso_disponibilidad_value">30%</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="peso_experiencia">Peso Experiencia:</label>
+                        <div class="range-container">
+                            <input type="range" id="peso_experiencia" name="peso_experiencia" min="0" max="100" value="40" class="range-slider">
+                            <div class="range-value" id="peso_experiencia_value">40%</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="algoritmo">Algoritmo de IA:</label>
+                        <select id="algoritmo" name="algoritmo">
+                            <option value="neural">Red Neural Avanzada</option>
+                            <option value="genetic">Algoritmo Genético</option>
+                            <option value="random_forest">Random Forest</option>
+                            <option value="gradient_boost">Gradient Boosting</option>
+                        </select>
+                    </div>
+                    <button class="btn" onclick="generarAsignacion()">
+                        <i class="fas fa-magic"></i> Generar Asignación IA
+                    </button>
+                </div>
+            </div>
+
+            <div class="results-section" id="results" style="display: none;">
+                <div class="results-header">
+                    <h3><i class="fas fa-clipboard-list"></i> Resultados de Asignación</h3>
+                    <div class="filter-tabs">
+                        <div class="filter-tab active" onclick="filterResults('all')">Todos</div>
+                        <div class="filter-tab" onclick="filterResults('top')">Top 5</div>
+                        <div class="filter-tab" onclick="filterResults('department')">Por Depto</div>
+                    </div>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progress"></div>
+                </div>
+                <div id="results-content"></div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block customJS %}
+<script>
+        // Crear partículas de fondo
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        // Inicializar partículas
+        createParticles();
+
+        // Actualizar valores de los sliders con animación
+        function updateSliderValue(sliderId, valueId) {
+            const slider = document.getElementById(sliderId);
+            const valueDisplay = document.getElementById(valueId);
+            
+            slider.addEventListener('input', function() {
+                const value = this.value;
+                const percentage = (value / 100) * 100;
+                
+                valueDisplay.textContent = value + '%';
+                valueDisplay.style.left = percentage + '%';
+                
+                // Actualizar el gradiente del slider
+                this.style.setProperty('--value', value + '%');
+                this.style.setProperty('--thumb-pos', percentage + '%');
+            });
+            
+            // Inicializar valores
+            const initialValue = slider.value;
+            const initialPercentage = (initialValue / 100) * 100;
+            valueDisplay.style.left = initialPercentage + '%';
+            slider.style.setProperty('--value', initialValue + '%');
+            slider.style.setProperty('--thumb-pos', initialPercentage + '%');
+        }
+
+        // Configurar sliders
+        updateSliderValue('peso_desempeno', 'peso_desempeno_value');
+        updateSliderValue('peso_disponibilidad', 'peso_disponibilidad_value');
+        updateSliderValue('peso_experiencia', 'peso_experiencia_value');
+
+        // Datos de empleados simulados más avanzados
+        const empleadosData = [
+            { 
+                nombre: 'Ana María García', 
+                departamento: 'Ventas', 
+                desempeno: 95, 
+                disponibilidad: 90, 
+                experiencia: 85,
+                score: 93,
+                proyectos: 12,
+                certificaciones: 3,
+                antiguedad: '2 años'
+            },
+            { 
+                nombre: 'Carlos Rodríguez', 
+                departamento: 'Producción', 
+                desempeno: 88, 
+                disponibilidad: 95, 
+                experiencia: 92,
+                score: 90,
+                proyectos: 8,
+                certificaciones: 2,
+                antiguedad: '3 años'
+            },
+            { 
+                nombre: 'María López', 
+                departamento: 'Administración', 
+                desempeno: 92, 
+                disponibilidad: 85, 
+                experiencia: 88,
+                score: 89,
+                proyectos: 15,
+                certificaciones: 4,
+                antiguedad: '4 años'
+            },
+            { 
+                nombre: 'Jorge Martínez', 
+                departamento: 'Logística', 
+                desempeno: 85, 
+                disponibilidad: 92, 
+                experiencia: 90,
+                score: 87,
+                proyectos: 10,
+                certificaciones: 2,
+                antiguedad: '1.5 años'
+            },
+            { 
+                nombre: 'Laura Hernández', 
+                departamento: 'Ventas', 
+                desempeno: 90, 
+                disponibilidad: 88, 
+                experiencia: 87,
+                score: 89,
+                proyectos: 11,
+                certificaciones: 3,
+                antiguedad: '2.5 años'
+            },
+            { 
+                nombre: 'Roberto Silva', 
+                departamento: 'Tecnología', 
+                desempeno: 97, 
+                disponibilidad: 82, 
+                experiencia: 95,
+                score: 92,
+                proyectos: 18,
+                certificaciones: 5,
+                antiguedad: '5 años'
+            },
+            { 
+                nombre: 'Carmen Vega', 
+                departamento: 'Recursos Humanos', 
+                desempeno: 91, 
+                disponibilidad: 94, 
+                experiencia: 89,
+                score: 91,
+                proyectos: 9,
+                certificaciones: 3,
+                antiguedad: '3.5 años'
+            },
+            { 
+                nombre: 'Diego Morales', 
+                departamento: 'Producción', 
+                desempeno: 86, 
+                disponibilidad: 91, 
+                experiencia: 83,
+                score: 86,
+                proyectos: 7,
+                certificaciones: 1,
+                antiguedad: '1 año'
+            }
+        ];
+
+        // Función para filtrar resultados
+        function filterResults(type) {
+            const tabs = document.querySelectorAll('.filter-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Aquí podrías implementar la lógica de filtrado
+            console.log('Filtrar por:', type);
+        }
+
+        // Función para generar asignación con IA
+        function generarAsignacion() {
+            const resultsSection = document.getElementById('results');
+            const resultsContent = document.getElementById('results-content');
+            const progressBar = document.getElementById('progress');
+            
+            // Mostrar sección de resultados
+            resultsSection.style.display = 'block';
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+            
+            // Mostrar loading avanzado
+            resultsContent.innerHTML = `
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">Procesando con IA Avanzada...</div>
+                    <div class="loading-dots">
+                        <div class="loading-dot"></div>
+                        <div class="loading-dot"></div>
+                        <div class="loading-dot"></div>
+                    </div>
+                    <div class="ai-thinking">
+                        <i class="fas fa-brain" style="color: #4f46e5;"></i>
+                        <span>Analizando patrones de desempeño</span>
+                        <div class="thinking-dots">
+                            <div class="thinking-dot"></div>
+                            <div class="thinking-dot"></div>
+                            <div class="thinking-dot"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Simular progreso
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 100) progress = 100;
+                progressBar.style.width = progress + '%';
+                
+                if (progress >= 100) {
+                    clearInterval(progressInterval);
+                    setTimeout(mostrarResultados, 500);
+                }
+            }, 200);
+        }
+
+        // Función para mostrar resultados
+        function mostrarResultados() {
+            const resultsContent = document.getElementById('results-content');
+            const algoritmo = document.getElementById('algoritmo').value;
+            const pesoDesempeno = document.getElementById('peso_desempeno').value;
+            const pesoDisponibilidad = document.getElementById('peso_disponibilidad').value;
+            const pesoExperiencia = document.getElementById('peso_experiencia').value;
+            
+            // Calcular scores basados en pesos
+            const empleadosCalculados = empleadosData.map(emp => {
+                const score = Math.round(
+                    (emp.desempeno * pesoDesempeno / 100) * 0.4 +
+                    (emp.disponibilidad * pesoDisponibilidad / 100) * 0.3 +
+                    (emp.experiencia * pesoExperiencia / 100) * 0.3
+                );
+                return { ...emp, score };
+            }).sort((a, b) => b.score - a.score);
+            
+            let html = `
+                <div style="margin-bottom: 25px; padding: 20px; background: linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%); border-radius: 12px; border: 1px solid rgba(79, 70, 229, 0.2);">
+                    <h4 style="color: #4f46e5; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-info-circle"></i> Información del Procesamiento
+                    </h4>
+                    <p style="color: #6b7280; margin: 0;">
+                        <strong>Algoritmo:</strong> ${algoritmo.replace('_', ' ').toUpperCase()} • 
+                        <strong>Empleados analizados:</strong> ${empleadosCalculados.length} • 
+                        <strong>Tiempo de procesamiento:</strong> 2.3s • 
+                        <strong>Precisión:</strong> 97.2%
+                    </p>
+                </div>
+            `;
+            
+            empleadosCalculados.forEach((emp, index) => {
+                const scoreColor = emp.score >= 90 ? '#10b981' : emp.score >= 80 ? '#f59e0b' : '#6b7280';
+                const positionBadge = index < 3 ? `<span style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; margin-left: 10px;">#${index + 1}</span>` : '';
+                
+                html += `
+                    <div class="employee-card" style="animation: slideInUp 0.6s ease-out ${index * 0.1}s both;">
+                        <div class="employee-info">
+                            <div class="employee-details">
+                                <h4>${emp.nombre} ${positionBadge}</h4>
+                                <p>${emp.departamento} • ${emp.antiguedad} de experiencia</p>
+                                <div class="employee-stats">
+                                    <div class="mini-stat">
+                                        <i class="fas fa-chart-line"></i> ${emp.desempeno}%
+                                    </div>
+                                    <div class="mini-stat">
+                                        <i class="fas fa-clock"></i> ${emp.disponibilidad}%
+                                    </div>
+                                    <div class="mini-stat">
+                                        <i class="fas fa-star"></i> ${emp.experiencia}%
+                                    </div>
+                                    <div class="mini-stat">
+                                        <i class="fas fa-project-diagram"></i> ${emp.proyectos} proyectos
+                                    </div>
+                                    <div class="mini-stat">
+                                        <i class="fas fa-certificate"></i> ${emp.certificaciones} certificaciones
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="score-badge" style="background: linear-gradient(135deg, ${scoreColor} 0%, ${scoreColor}dd 100%);">
+                                <i class="fas fa-brain"></i> ${emp.score}%
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // Agregar estadísticas finales
+            html += `
+                <div style="margin-top: 30px; padding: 25px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%); border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2);">
+                    <h4 style="color: #059669; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-chart-pie"></i> Estadísticas de Asignación
+                    </h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #059669;">${empleadosCalculados.filter(e => e.score >= 90).length}</div>
+                            <div style="font-size: 0.9rem; color: #6b7280;">Candidatos Excelentes</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #059669;">${Math.round(empleadosCalculados.reduce((acc, emp) => acc + emp.score, 0) / empleadosCalculados.length)}%</div>
+                            <div style="font-size: 0.9rem; color: #6b7280;">Promedio de Score</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #059669;">97.2%</div>
+                            <div style="font-size: 0.9rem; color: #6b7280;">Precisión del Algoritmo</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #059669;">2.3s</div>
+                            <div style="font-size: 0.9rem; color: #6b7280;">Tiempo de Procesamiento</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            resultsContent.innerHTML = html;
+            
+            // Actualizar estadísticas en tiempo real
+            updateStats();
+        }
+
+        // Función para actualizar estadísticas
+        function updateStats() {
+            const stats = [
+                { id: 'activeEmployees', value: 24, increment: 1 },
+                { id: 'availableShifts', value: 3, increment: 0 },
+                { id: 'aiEfficiency', value: 94, increment: 2, suffix: '%' },
+                { id: 'todayAssignments', value: 15, increment: 3 }
+            ];
+            
+            stats.forEach(stat => {
+                const element = document.getElementById(stat.id);
+                if (element && stat.increment > 0) {
+                    const newValue = stat.value + stat.increment;
+                    animateNumber(element, stat.value, newValue, stat.suffix || '');
+                }
+            });
+        }
+
+        // Función para animar números
+        function animateNumber(element, start, end, suffix) {
+            const duration = 2000;
+            const startTime = performance.now();
+            
+            function animate(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                const current = Math.floor(start + (end - start) * progress);
+                element.textContent = current + suffix;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        // Agregar estilos de animación
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(30px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            
+            .employee-card {
+                animation: fadeIn 0.6s ease-out;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Inicializar fecha actual
+        document.getElementById('fecha').valueAsDate = new Date();
+
+        // Efectos de hover mejorados
+        document.querySelectorAll('.control-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-8px) scale(1.02)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+
+        // Validación de formulario en tiempo real
+        document.getElementById('turno').addEventListener('change', function() {
+            if (this.value) {
+                this.style.borderColor = '#10b981';
+                this.style.backgroundColor = 'rgba(16, 185, 129, 0.05)';
+            }
+        });
+
+        document.getElementById('departamento').addEventListener('change', function() {
+            if (this.value) {
+                this.style.borderColor = '#10b981';
+                this.style.backgroundColor = 'rgba(16, 185, 129, 0.05)';
+            }
+        });
+
+        // Efecto de escritura para el título
+        function typeWriter(element, text, speed = 50) {
+            let i = 0;
+            element.innerHTML = '';
+            
+            function type() {
+                if (i < text.length) {
+                    element.innerHTML += text.charAt(i);
+                    i++;
+                    setTimeout(type, speed);
+                }
+            }
+            
+            type();
+        }
+
+        // Inicializar efectos al cargar la página
+        window.addEventListener('load', function() {
+            // Animar estadísticas iniciales
+            setTimeout(() => {
+                const statElements = document.querySelectorAll('.stat-card h4');
+                statElements.forEach((element, index) => {
+                    const finalValue = element.textContent;
+                    element.textContent = '0';
+                    setTimeout(() => {
+                        animateNumber(element, 0, parseInt(finalValue), finalValue.includes('%') ? '%' : '');
+                    }, index * 200);
+                });
+            }, 500);
+        });
+</script>
+{% endblock %}
+
