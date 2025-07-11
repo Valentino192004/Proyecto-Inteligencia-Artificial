@@ -363,7 +363,7 @@ function mostrarReporte(datos) {
                 <td>${registro.hora_salida || '<span class="text-muted">--</span>'}</td>
                 <td>${registro.horas_trabajadas || '<span class="text-muted">--</span>'}</td>
                 <td>
-                    <span class="badge ${getBadgeClass(registro.estado)}">${registro.estado || 'N/A'}</span>
+                    <span class="badge ${getBadgeClass(registro.estado)}">${getEstadoDisplay(registro.estado) || 'N/A'}</span>
                 </td>
                 <td>${registro.observaciones || '<span class="text-muted">--</span>'}</td>
             </tr>
@@ -374,18 +374,28 @@ function mostrarReporte(datos) {
 function getBadgeClass(estado) {
     switch(estado) {
         case 'presente': return 'bg-success';
-        case 'tardanza': return 'bg-warning';
+        case 'tarde': return 'bg-warning'; // Corregido: usa 'tarde'
         case 'ausente': return 'bg-danger';
-        case 'salida_temprana': return 'bg-info';
+        case 'temprano': return 'bg-info'; // Corregido: usa 'temprano'
         default: return 'bg-secondary';
     }
+}
+
+function getEstadoDisplay(estado) {
+    const mapaEstados = {
+        'presente': 'Presente',
+        'tarde': 'Tardanza', // Muestra 'Tardanza' en la UI
+        'ausente': 'Ausente',
+        'temprano': 'Salida Temprana'
+    };
+    return mapaEstados[estado] || estado;
 }
 
 function actualizarEstadisticas(datos) {
     const stats = {
         total: datos.length,
         presentes: datos.filter(d => d.estado === 'presente').length,
-        tardanzas: datos.filter(d => d.estado === 'tardanza').length,
+        tardanzas: datos.filter(d => d.estado === 'tarde').length, // Corregido: cuenta 'tarde'
         ausentes: datos.filter(d => d.estado === 'ausente').length
     };
     
@@ -416,7 +426,7 @@ function generarGraficos(datos) {
             acc[fecha] = { presentes: 0, tardanzas: 0, ausentes: 0, fechaObj: parseLocalDate(fecha) };
         }
         if (registro.estado === 'presente') acc[fecha].presentes++;
-        if (registro.estado === 'tardanza') acc[fecha].tardanzas++;
+        if (registro.estado === 'tarde') acc[fecha].tardanzas++; // Corregido: agrupa por 'tarde'
         if (registro.estado === 'ausente') acc[fecha].ausentes++;
         return acc;
     }, {});
@@ -470,14 +480,14 @@ function generarGraficos(datos) {
 
     // 2. Contar estados para el gráfico de dona
     const presentes = datos.filter(d => d.estado === 'presente').length;
-    const tardanzas = datos.filter(d => d.estado === 'tardanza').length;
+    const tardanzas = datos.filter(d => d.estado === 'tarde').length; // Corregido: cuenta 'tarde'
     const ausentes = datos.filter(d => d.estado === 'ausente').length;
 
     // Gráfico de distribución (Dona)
     chartDistribucion = new Chart(ctxDona, {
         type: 'doughnut',
         data: {
-            labels: ['Presente', 'Tardanza', 'Ausente'],
+            labels: ['Presente', 'Tardanza', 'Ausente'], // Mantenemos la etiqueta 'Tardanza' para el gráfico
             datasets: [{
                 data: [presentes, tardanzas, ausentes],
                 backgroundColor: ['#28a745', '#ffc107', '#dc3545'],

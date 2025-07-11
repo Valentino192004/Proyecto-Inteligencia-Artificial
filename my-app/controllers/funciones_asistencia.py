@@ -13,6 +13,7 @@ from PIL import Image
 import io
 from werkzeug.utils import secure_filename
 import re
+import random
 
 # Importar conexión a BD
 from conexion.conexionBD import connectionBD
@@ -737,4 +738,3 @@ def obtener_horarios_sistema():
             'tolerancia_minutos': 15
         }
     
-  
