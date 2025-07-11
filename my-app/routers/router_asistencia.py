@@ -146,11 +146,12 @@ def api_reporte_asistencia_general():
     try:
         fecha_inicio = request.args.get('fecha_inicio')
         fecha_fin = request.args.get('fecha_fin')
+        id_empleado = request.args.get('id_empleado')
         
         if not fecha_inicio or not fecha_fin:
             return jsonify({"success": False, "message": "Debe especificar fecha_inicio y fecha_fin"}), 400
         
-        reporte = obtener_reporte_asistencia_general(fecha_inicio, fecha_fin)
+        reporte = obtener_reporte_asistencia_general(fecha_inicio, fecha_fin, id_empleado)
         
         return jsonify({
             "success": True,

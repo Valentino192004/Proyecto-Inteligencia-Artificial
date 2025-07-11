@@ -275,45 +275,68 @@ def obtener_asistencia_empleado(id_empleado, fecha_inicio=None, fecha_fin=None):
         print(f"Error al obtener asistencia: {str(e)}")
         return []
 
-def obtener_reporte_asistencia_general(fecha_inicio, fecha_fin):
+def obtener_reporte_asistencia_general(fecha_inicio, fecha_fin, id_empleado=None):
     """
-    Obtiene reporte general de asistencia
+    Obtiene reporte general de asistencia con filtros de fecha y empleado.
     """
     try:
+        # Convertir la fecha final a datetime y sumar un día para incluir todo el día.
+        fecha_fin_dt = datetime.strptime(fecha_fin, '%Y-%m-%d') + timedelta(days=1)
+        fecha_fin_ajustada = fecha_fin_dt.strftime('%Y-%m-%d')
+
         with connectionBD() as conexion:
             with conexion.cursor(dictionary=True) as cursor:
-                cursor.execute("""
-                    SELECT a.*, e.nombre_empleado, e.apellido_empleado, e.foto_empleado, e.profesion_empleado,
-                           CONCAT(e.nombre_empleado, ' ', e.apellido_empleado) as nombre_completo,
-                           CASE 
-                               WHEN a.hora_entrada IS NULL THEN 'Sin entrada'
-                               WHEN a.hora_entrada <= %s THEN 'Puntual'
-                               ELSE 'Tardanza'
-                           END as status_entrada,
-                           CASE 
-                               WHEN a.hora_salida IS NULL THEN 'Sin salida'
-                               WHEN a.hora_salida >= %s THEN 'Completa'
-                               ELSE 'Salida temprana'
-                           END as status_salida,
-                           CASE 
-                               WHEN a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL 
-                               THEN TIME_FORMAT(TIMEDIFF(a.hora_salida, a.hora_entrada), '%%H:%%i:%%s')
-                               ELSE NULL
-                           END as horas_trabajadas
+                # Se quita TIME_FORMAT de la consulta para formatear en Python.
+                # Esto es más robusto y evita problemas de formato.
+                query = """
+                    SELECT 
+                        a.id_asistencia,
+                        a.id_empleado,
+                        a.fecha_asistencia as fecha,
+                        a.hora_entrada,
+                        a.hora_salida,
+                        a.estado,
+                        a.observaciones,
+                        e.foto_empleado,
+                        e.profesion_empleado,
+                        CONCAT(e.nombre_empleado, ' ', e.apellido_empleado) as nombre_completo,
+                        TIMEDIFF(a.hora_salida, a.hora_entrada) as horas_trabajadas
                     FROM tbl_asistencia a
                     INNER JOIN tbl_empleados e ON a.id_empleado = e.id_empleado
-                    WHERE a.fecha_asistencia BETWEEN %s AND %s
-                    ORDER BY a.fecha_asistencia DESC, a.hora_entrada DESC
-                """, (
-                    obtener_configuracion('hora_entrada_inicio', '08:00:00'),
-                    obtener_configuracion('hora_salida_inicio', '17:00:00'),
-                    fecha_inicio, 
-                    fecha_fin
-                ))
-                return cursor.fetchall()
+                    WHERE a.fecha_asistencia >= %s AND a.fecha_asistencia < %s
+                """
+                params = [fecha_inicio, fecha_fin_ajustada]
+
+                # Añadir filtro de empleado si se proporciona
+                if id_empleado and id_empleado.isdigit():
+                    query += " AND a.id_empleado = %s"
+                    params.append(int(id_empleado))
+
+                query += " ORDER BY a.fecha_asistencia DESC, a.hora_entrada DESC"
+                cursor.execute(query, tuple(params))
+                reporte = cursor.fetchall()
+
+                # Formatear fechas y horas en Python para evitar errores de JSON y formato
+                for row in reporte:
+                    # Formatear fecha
+                    if isinstance(row.get('fecha'), date):
+                        row['fecha'] = row['fecha'].strftime('%Y-%m-%d')
+                    
+                    # Formatear horas (que la BD devuelve como objetos timedelta)
+                    for key in ['hora_entrada', 'hora_salida', 'horas_trabajadas']:
+                        if isinstance(row.get(key), timedelta):
+                            total_seconds = row[key].total_seconds()
+                            # abs() para manejar TIMEDIFF negativos si ocurrieran
+                            hours, remainder = divmod(abs(total_seconds), 3600)
+                            minutes, _ = divmod(remainder, 60)
+                            row[key] = f"{int(hours):02}:{int(minutes):02}"
+                
+                return reporte
                 
     except Exception as e:
-        print(f"Error al obtener reporte: {str(e)}")
+        print(f"Error al obtener reporte general: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return []
 
 def obtener_estadisticas_asistencia(id_empleado=None, mes=None, año=None):
