@@ -47,6 +47,33 @@
 
         <div class="row mt-2">
           <div class="col-md-6">
+            <label for="dni_empleado" class="form-label"> DNI </label>
+            <br />
+            {{ detalle_empleado.dni_empleado }}
+          </div>
+          <div class="col-md-6">
+            <label for="fecha_nacimiento" class="form-label">
+              Fecha de Nacimiento
+            </label>
+            <br />
+            {% if detalle_empleado.fecha_nacimiento %} {{
+            detalle_empleado.fecha_nacimiento.strftime('%d/%m/%Y') }} {% endif
+            %}
+          </div>
+        </div>
+
+        <div class="row mt-2">
+          <div class="col-md-12">
+            <label for="direccion_empleado" class="form-label">
+              Dirección
+            </label>
+            <br />
+            {{ detalle_empleado.direccion_empleado }}
+          </div>
+        </div>
+
+        <div class="row mt-2">
+          <div class="col-md-6">
             <label for="sexo_empleado" class="form-label">
               Sexo del empleado
             </label>
@@ -85,7 +112,7 @@
               Salario del empleado
             </label>
             <br />
-            $ {{
+            S/ {{
             '{:,.0f}'.format(detalle_empleado.salario_empleado).replace(',',
             '.')}}
           </div>

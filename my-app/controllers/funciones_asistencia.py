@@ -96,31 +96,39 @@ def guardar_foto_asistencia(imagen_base64, id_empleado, tipo_marcado):
         return None
 
 def obtener_asistencia_hoy():
-    """
-    Obtiene la asistencia del día actual
-    """
     try:
         fecha_hoy = date.today()
+        
         with connectionBD() as conexion:
             with conexion.cursor(dictionary=True) as cursor:
-                cursor.execute("""
-                    SELECT a.*, e.nombre_empleado, e.apellido_empleado, e.foto_empleado, e.profesion_empleado,
-                           CONCAT(e.nombre_empleado, ' ', e.apellido_empleado) as nombre_completo,
-                           CASE 
-                               WHEN a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL 
-                               THEN TIMEDIFF(a.hora_salida, a.hora_entrada)
-                               ELSE NULL
-                           END as horas_trabajadas
+                querySQL = """
+                    SELECT 
+                        a.id_empleado, a.estado,
+                        TIME_FORMAT(a.hora_entrada, '%H:%i:%s') as hora_entrada,
+                        TIME_FORMAT(a.hora_salida, '%H:%i:%s') as hora_salida,
+                        e.foto_empleado, e.profesion_empleado,
+                        CONCAT(e.nombre_empleado, ' ', e.apellido_empleado) as nombre_completo,
+                        CASE 
+                            WHEN a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL
+                            THEN TIME_FORMAT(TIMEDIFF(a.hora_salida, a.hora_entrada), '%H:%i:%s')
+                            ELSE NULL
+                        END as horas_trabajadas
                     FROM tbl_asistencia a
                     INNER JOIN tbl_empleados e ON a.id_empleado = e.id_empleado
-                    WHERE a.fecha_asistencia = %s
+                    WHERE a.fecha_asistencia = %(fecha)s
                     ORDER BY a.hora_entrada DESC
-                """, (fecha_hoy,))
-                return cursor.fetchall()
+                """
+                
+                cursor.execute(querySQL, {'fecha': fecha_hoy})
+                asistencias = cursor.fetchall()
+                return asistencias
                 
     except Exception as e:
         print(f"Error al obtener asistencia de hoy: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return []
+
 
 def marcar_asistencia_manual(id_empleado, tipo_marcado, imagen_base64=None, observaciones=None):
     """
@@ -289,7 +297,7 @@ def obtener_reporte_asistencia_general(fecha_inicio, fecha_fin):
                            END as status_salida,
                            CASE 
                                WHEN a.hora_entrada IS NOT NULL AND a.hora_salida IS NOT NULL 
-                               THEN TIMEDIFF(a.hora_salida, a.hora_entrada)
+                               THEN TIME_FORMAT(TIMEDIFF(a.hora_salida, a.hora_entrada), '%%H:%%i:%%s')
                                ELSE NULL
                            END as horas_trabajadas
                     FROM tbl_asistencia a
@@ -705,51 +713,5 @@ def obtener_horarios_sistema():
             'hora_salida_fin': '19:00:00',
             'tolerancia_minutos': 15
         }
-    """Obtiene los nombres de los días laborables configurados"""
-    try:
-        dias_laborables = obtener_configuracion('dias_laborables', '1,2,3,4,5,6')
-        dias_lista = [int(d.strip()) for d in dias_laborables.split(',')]
-        
-        # Mapeo de números a nombres de días
-        nombres_dias = {
-            1: 'Lunes',
-            2: 'Martes', 
-            3: 'Miércoles',
-            4: 'Jueves',
-            5: 'Viernes',
-            6: 'Sábado',
-            7: 'Domingo'
-        }
-        
-        # Obtener nombres de los días configurados
-        nombres = [nombres_dias[dia] for dia in dias_lista if dia in nombres_dias]
-        
-        # Formatear la lista
-        if len(nombres) == 1:
-            return nombres[0]
-        elif len(nombres) == 2:
-            return f"{nombres[0]} y {nombres[1]}"
-        else:
-            return f"{', '.join(nombres[:-1])} y {nombres[-1]}"
-            
-    except Exception as e:
-        print(f"Error obteniendo nombres de días: {e}")
-        return "Lunes a Sábado"
-    """Obtiene todos los horarios configurados del sistema"""
-    try:
-        return {
-            'hora_entrada_inicio': obtener_configuracion('hora_entrada_inicio', '08:00:00'),
-            'hora_entrada_fin': obtener_configuracion('hora_entrada_fin', '09:00:00'),
-            'hora_salida_inicio': obtener_configuracion('hora_salida_inicio', '17:00:00'),
-            'hora_salida_fin': obtener_configuracion('hora_salida_fin', '18:00:00'),
-            'tolerancia_minutos': int(obtener_configuracion('tolerancia_minutos', '15'))
-        }
-    except Exception as e:
-        print(f"Error al obtener horarios: {e}")
-        return {
-            'hora_entrada_inicio': '08:00:00',
-            'hora_entrada_fin': '09:00:00',
-            'hora_salida_inicio': '17:00:00',
-            'hora_salida_fin': '18:00:00',
-            'tolerancia_minutos': 15
-        }
+    
+  

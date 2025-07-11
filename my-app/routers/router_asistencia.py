@@ -239,7 +239,7 @@ def detalle_asistencia_empleado(id_empleado):
         estadisticas = obtener_estadisticas_asistencia(id_empleado)
         
         return render_template(f'{PATH_URL}/detalle_asistencia_empleado.html',
-                             empleado=empleado[0],  # sql_detalles_empleadosBD retorna lista
+                             empleado=empleado,
                              asistencia=asistencia,
                              estadisticas=estadisticas)
     else:

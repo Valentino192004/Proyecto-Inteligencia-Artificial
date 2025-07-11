@@ -35,6 +35,9 @@
               <th>#</th>
               <th>Nombre</th>
               <th>Apellido</th>
+              <th>DNI</th>
+              <th>Dirección</th>
+              <th>Fecha Nacimiento</th>
               <th>Sexo</th>
               <th>Salario</th>
               <th>Acción</th>
@@ -46,9 +49,12 @@
               <td>{{ loop.index }}</td>
               <td>{{ empleado.nombre_empleado }}</td>
               <td>{{ empleado.apellido_empleado }}</td>
+              <td>{{ empleado.dni_empleado }}</td>
+              <td>{{ empleado.direccion_empleado }}</td>
+              <td>{{ empleado.fecha_nacimiento }}</td>
               <td>{{ empleado.sexo_empleado }}</td>
               <td>
-                $ {{ '{:,.0f}'.format(empleado.salario_empleado).replace(',',
+                S/ {{ '{:,.0f}'.format(empleado.salario_empleado).replace(',',
                 '.')}}
               </td>
               <td width="10px">

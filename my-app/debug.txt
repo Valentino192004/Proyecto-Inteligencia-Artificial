@@ -1,0 +1,272 @@
+# SOLUCIÓN: La API necesita "type_document"
+
+import requests
+import json
+from datetime import datetime
+
+def test_with_type_document(dni):
+    """Prueba con el campo type_document que falta"""
+    
+    print(f"\n=== 🔧 PROBANDO CON type_document ===")
+    print(f"DNI: {dni}")
+    
+    url = "https://api.consultasperu.com/api/v1/query"
+    token = "09462861dd51641fa8d9947793ae1156a27df903d1468230ec496a4eac628c84"
+    
+    # FORMATO CORRECTO con type_document
+    headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    }
+    
+    data = {
+        "token": token,
+        "type_document": "dni",  # ← ESTE ERA EL CAMPO FALTANTE
+        "document_number": dni
+    }
+    
+    print(f"Headers: {json.dumps(headers, indent=2)}")
+    print(f"Data: {json.dumps(data, indent=2)}")
+    
+    try:
+        response = requests.post(url, headers=headers, json=data, timeout=15)
+        print(f"\nStatus Code: {response.status_code}")
+        print(f"Response: {response.text}")
+        
+        if response.status_code == 200:
+            print("✅ ¡FUNCIONA CON type_document!")
+            result = response.json()
+            if result.get('success'):
+                print(f"✅ Datos encontrados: {json.dumps(result, indent=2, ensure_ascii=False)}")
+                return True
+            else:
+                print(f"⚠️ API respondió pero sin datos: {result}")
+        else:
+            print(f"❌ Aún falla con código {response.status_code}")
+            
+    except Exception as e:
+        print(f"❌ Error: {e}")
+    
+    return False
+
+# FUNCIÓN CORREGIDA PARA TU CÓDIGO
+def consultar_dni_api_corregida(dni):
+    """Versión corregida con type_document"""
+    try:
+        if not dni or len(dni) != 8 or not dni.isdigit():
+            return {
+                "success": False,
+                "message": "DNI debe tener exactamente 8 dígitos numéricos"
+            }
+        
+        api_url = "https://api.consultasperu.com/api/v1/query"
+        token = "09462861dd51641fa8d9947793ae1156a27df903d1468230ec496a4eac628c84"
+
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'User-Agent': 'Mozilla/5.0 (compatible; DNI-API/1.0)'
+        }
+
+        # FORMATO CORRECTO
+        data = {
+            "token": token,
+            "type_document": "dni",      # ← CAMPO CORRECTO
+            "document_number": dni       # ← USAR document_number, no dni
+        }
+
+        print(f"🔍 === CONSULTA DNI CORREGIDA ===")
+        print(f"🔍 DNI: {dni}")
+        print(f"🔍 Data: {json.dumps(data, indent=2)}")
+
+        response = requests.post(
+            api_url,
+            headers=headers,
+            json=data,
+            timeout=15,
+            verify=True
+        )
+        
+        print(f"🔍 Status Code: {response.status_code}")
+        print(f"🔍 Response: {response.text}")
+
+        if response.status_code == 200:
+            try:
+                result = response.json()
+                print(f"✅ JSON parseado correctamente")
+
+                if result.get('success') and result.get('data'):
+                    persona = result['data']
+                    
+                    # Extraer nombres y apellidos
+                    nombres = persona.get('nombres', '').strip().title()
+                    apellido_paterno = persona.get('apellido_paterno', '').strip().title()
+                    apellido_materno = persona.get('apellido_materno', '').strip().title()
+                    
+                    # Si no hay apellidos separados, usar 'apellidos'
+                    if not apellido_paterno and not apellido_materno:
+                        apellidos_completos = persona.get('apellidos', '').strip().title()
+                        apellidos_split = apellidos_completos.split(' ', 1)
+                        apellido_paterno = apellidos_split[0] if len(apellidos_split) > 0 else ''
+                        apellido_materno = apellidos_split[1] if len(apellidos_split) > 1 else ''
+                    
+                    return {
+                        "success": True,
+                        "data": {
+                            "dni": dni,
+                            "nombres": nombres,
+                            "apellido_paterno": apellido_paterno,
+                            "apellido_materno": apellido_materno,
+                            "apellidos": f"{apellido_paterno} {apellido_materno}".strip(),
+                            "nombre_completo": f"{nombres} {apellido_paterno} {apellido_materno}".strip(),
+                            "fecha_nacimiento": procesar_fecha_nacimiento(persona.get('fechaNacimiento')),
+                            "ubigeo": persona.get('ubigeo', ''),
+                            "departamento": persona.get('departamento', ''),
+                            "provincia": persona.get('provincia', ''),
+                            "distrito": persona.get('distrito', ''),
+                            "direccion": persona.get('direccion', ''),
+                            "raw_data": persona
+                        }
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "message": "No se encontraron datos para este DNI"
+                    }
+                    
+            except json.JSONDecodeError as e:
+                print(f"❌ Error parseando JSON: {e}")
+                return {
+                    "success": False,
+                    "message": "Respuesta inválida de la API"
+                }
+                
+        elif response.status_code == 401:
+            return {
+                "success": False,
+                "message": "Token de API inválido o expirado"
+            }
+        elif response.status_code == 404:
+            return {
+                "success": False,
+                "message": "DNI no encontrado en la base de datos"
+            }
+        elif response.status_code == 429:
+            return {
+                "success": False,
+                "message": "Límite de consultas excedido. Intente más tarde"
+            }
+        elif response.status_code >= 500:
+            return {
+                "success": False,
+                "message": f"Error del servidor de la API: {response.status_code}"
+            }
+        else:
+            return {
+                "success": False,
+                "message": f"Error en la consulta: {response.status_code}"
+            }
+            
+    except requests.exceptions.Timeout:
+        return {
+            "success": False,
+            "message": "Tiempo de espera agotado. Intente nuevamente"
+        }
+    except requests.exceptions.ConnectionError:
+        return {
+            "success": False,
+            "message": "Error de conexión con el servidor"
+        }
+    except Exception as e:
+        print(f"❌ Error inesperado: {e}")
+        return {
+            "success": False,
+            "message": "Error interno del servidor"
+        }
+
+def procesar_fecha_nacimiento(fecha_str):
+    """Procesa diferentes formatos de fecha"""
+    if not fecha_str:
+        return None
+    try:
+        formatos = [
+            "%Y-%m-%d",
+            "%d/%m/%Y",
+            "%d-%m-%Y"
+        ]
+
+        for formato in formatos:
+            try:
+                fecha_obj = datetime.strptime(str(fecha_str), formato)
+                return fecha_obj.strftime("%Y-%m-%d")
+            except ValueError:
+                continue
+        return None
+    except Exception as e:
+        print(f"Error procesando fecha: {e}")
+        return None
+
+# PRUEBA INMEDIATA
+if __name__ == "__main__":
+    dni_test = "70388366"
+    
+    print("=== PROBANDO SOLUCIÓN ===")
+    
+    # Test 1: Con type_document
+    success = test_with_type_document(dni_test)
+    
+    if success:
+        print(f"\n✅ ¡SOLUCIONADO! El campo correcto es 'type_document'")
+        
+        # Test 2: Con la función completa
+        print(f"\n=== PROBANDO FUNCIÓN COMPLETA ===")
+        resultado = consultar_dni_api_corregida(dni_test)
+        print(f"Resultado final: {json.dumps(resultado, indent=2, ensure_ascii=False)}")
+    else:
+        print(f"\n❌ Aún hay problemas")
+
+# ALTERNATIVAS SI AÚN NO FUNCIONA
+def test_otras_alternativas(dni):
+    """Prueba otras posibles variaciones"""
+    
+    url = "https://api.consultasperu.com/api/v1/query"
+    token = "09462861dd51641fa8d9947793ae1156a27df903d1468230ec496a4eac628c84"
+    
+    headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+    
+    alternativas = [
+        {
+            "name": "type_document + document_number",
+            "data": {"token": token, "type_document": "dni", "document_number": dni}
+        },
+        {
+            "name": "document_type + number",
+            "data": {"token": token, "document_type": "dni", "number": dni}
+        },
+        {
+            "name": "type + document",
+            "data": {"token": token, "type": "dni", "document": dni}
+        },
+        {
+            "name": "doc_type + doc_number",
+            "data": {"token": token, "doc_type": "dni", "doc_number": dni}
+        }
+    ]
+    
+    print(f"\n=== PROBANDO ALTERNATIVAS PARA DNI: {dni} ===")
+    
+    for alt in alternativas:
+        print(f"\n--- {alt['name']} ---")
+        try:
+            response = requests.post(url, headers=headers, json=alt['data'], timeout=10)
+            print(f"Status: {response.status_code}")
+            print(f"Response: {response.text[:200]}...")
+            
+            if response.status_code == 200:
+                print(f"✅ ¡FUNCIONA! - {alt['name']}")
+                return alt['data']
+                
+        except Exception as e:
+            print(f"Error: {e}")
+    
+    return None

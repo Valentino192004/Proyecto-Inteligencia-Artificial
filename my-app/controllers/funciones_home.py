@@ -14,10 +14,7 @@ import requests
 
 from os import remove  # Modulo  para remover archivo
 from os import path  # Modulo para obtener la ruta o directorio
-
-
-import openpyxl  # Para generar el excel
-# biblioteca o modulo send_file para forzar la descarga
+import openpyxl  # Para crear archivo Excel
 from flask import send_file
 
 
@@ -88,6 +85,9 @@ def sql_lista_empleadosBD():
                         e.id_empleado,
                         e.nombre_empleado, 
                         e.apellido_empleado,
+                        e.dni_empleado,
+                        e.direccion_empleado,
+                        e.fecha_nacimiento,
                         e.salario_empleado,
                         e.foto_empleado,
                         CASE
@@ -102,7 +102,7 @@ def sql_lista_empleadosBD():
         return empleadosBD
     except Exception as e:
         print(
-            f"Errro en la función sql_lista_empleadosBD: {e}")
+            f"Error en la función sql_lista_empleadosBD: {e}")
         return None
 
 
@@ -116,6 +116,9 @@ def sql_detalles_empleadosBD(idEmpleado):
                         e.id_empleado,
                         e.nombre_empleado, 
                         e.apellido_empleado,
+                        e.dni_empleado,
+                        e.direccion_empleado,
+                        e.fecha_nacimiento,
                         e.salario_empleado,
                         CASE
                             WHEN e.sexo_empleado = 1 THEN 'Masculino'
@@ -149,6 +152,9 @@ def empleadosReporte():
                         e.id_empleado,
                         e.nombre_empleado, 
                         e.apellido_empleado,
+                        e.dni_empleado,
+                        e.direccion_empleado,
+                        e.fecha_nacimiento,
                         e.salario_empleado,
                         e.email_empleado,
                         e.telefono_empleado,
@@ -166,7 +172,7 @@ def empleadosReporte():
         return empleadosBD
     except Exception as e:
         print(
-            f"Errro en la función empleadosReporte: {e}")
+            f"Error en la función empleadosReporte: {e}")
         return None
 
 
@@ -176,18 +182,21 @@ def generarReporteExcel():
     hoja = wb.active
 
     # Agregar la fila de encabezado con los títulos
-    cabeceraExcel = ("Nombre", "Apellido", "Sexo",
+    cabeceraExcel = ("Nombre", "Apellido", "DNI", "Dirección", "Fecha de Nacimiento","Sexo",
                      "Telefono", "Email", "Profesión", "Salario", "Fecha de Ingreso")
 
     hoja.append(cabeceraExcel)
 
     # Formato para números en moneda colombiana y sin decimales
-    formato_moneda_colombiana = '#,##0'
+    formato_moneda_peruana = '"S/" #,##0'
 
     # Agregar los registros a la hoja
     for registro in dataEmpleados:
         nombre_empleado = registro['nombre_empleado']
         apellido_empleado = registro['apellido_empleado']
+        dni_empleado = registro['dni_empleado']
+        direccion_empleado = registro['direccion_empleado']
+        fecha_nacimiento = registro['fecha_nacimiento']
         sexo_empleado = registro['sexo_empleado']
         telefono_empleado = registro['telefono_empleado']
         email_empleado = registro['email_empleado']
@@ -196,14 +205,15 @@ def generarReporteExcel():
         fecha_registro = registro['fecha_registro']
 
         # Agregar los valores a la hoja
-        hoja.append((nombre_empleado, apellido_empleado, sexo_empleado, telefono_empleado, email_empleado, profesion_empleado,
+        hoja.append((nombre_empleado, apellido_empleado, dni_empleado, direccion_empleado, fecha_nacimiento, sexo_empleado, telefono_empleado, email_empleado, profesion_empleado,
                      salario_empleado, fecha_registro))
 
-        # Itera a través de las filas y aplica el formato a la columna G
-        for fila_num in range(2, hoja.max_row + 1):
-            columna = 7  # Columna G
-            celda = hoja.cell(row=fila_num, column=columna)
-            celda.number_format = formato_moneda_colombiana
+    # Itera a través de las filas y aplica el formato a la columna de Salario
+    # Se movió fuera del bucle principal para mayor eficiencia
+    for fila_num in range(2, hoja.max_row + 1):
+        columna = 10  # Columna J para Salario
+        celda = hoja.cell(row=fila_num, column=columna)
+        celda.number_format = formato_moneda_peruana
 
     fecha_actual = datetime.datetime.now()
     archivoExcel = f"Reporte_empleados_{fecha_actual.strftime('%Y_%m_%d')}.xlsx"
@@ -390,6 +400,7 @@ def eliminarUsuario(id):
 
 # consultas DNI con api 
 def consultar_dni_api(dni):
+    """Función corregida con mapeo de campos correcto"""
     try:
         if not dni or len(dni) != 8 or not dni.isdigit():
             return {
@@ -403,9 +414,10 @@ def consultar_dni_api(dni):
             'Content-Type': 'application/json',
         }
 
+        # FORMATO CORRECTO - con type_document
         data = {
             "token": "09462861dd51641fa8d9947793ae1156a27df903d1468230ec496a4eac628c84",
-            'dni': dni,
+            "type_document": "dni",
             "document_number": dni
         }
 
@@ -417,18 +429,55 @@ def consultar_dni_api(dni):
 
         if response.status_code == 200:
             result = response.json()
-            print(f"✅ Datos recibidos: {data}")
+            print(f"✅ Datos recibidos: {result}")
 
             if result.get('success') and result.get('data'):
                 persona = result['data']
+                
+                # MAPEO CORRECTO DE CAMPOS
+                # La API devuelve:
+                # - "name" (no "nombres")
+                # - "first_last_name" (no "apellido_paterno") 
+                # - "second_last_name" (no "apellido_materno")
+                # - "date_of_birth" (no "fechaNacimiento")
+                
+                nombres = persona.get('name', '').strip().title()
+                apellido_paterno = persona.get('first_last_name', '').strip().title()
+                apellido_materno = persona.get('second_last_name', '').strip().title()
+                fecha_nacimiento = persona.get('date_of_birth', '')
+                
+                # Si hay surname completo, usarlo como fallback
+                if not apellido_paterno and not apellido_materno:
+                    surname_completo = persona.get('surname', '').strip().title()
+                    if surname_completo:
+                        apellidos_split = surname_completo.split(' ', 1)
+                        apellido_paterno = apellidos_split[0] if len(apellidos_split) > 0 else ''
+                        apellido_materno = apellidos_split[1] if len(apellidos_split) > 1 else ''
+                
+                # Construir nombre completo
+                nombre_completo = f"{nombres} {apellido_paterno} {apellido_materno}".strip()
+                
                 return {
                     "success": True,
                     "data": {
-                        "nombres": persona.get('nombres','').strip().title(),
-                        "apellidos": persona.get('apellidos','').strip().title(),
-                        "fecha_nacimiento": procesar_fecha_nacimiento(persona.get('fechaNacimiento')),
-                        "nombre_completo": f"{persona.get('nombres','')} {persona.get('apellidos','').strip().title()}",
-                  }
+                        "dni": persona.get('number', dni),
+                        "nombres": nombres,
+                        "apellido_paterno": apellido_paterno,
+                        "apellido_materno": apellido_materno,
+                        "apellidos": f"{apellido_paterno} {apellido_materno}".strip(),
+                        "nombre_completo": nombre_completo,
+                        "fecha_nacimiento": procesar_fecha_nacimiento(fecha_nacimiento),
+                        "genero": persona.get('gender', ''),
+                        "departamento": persona.get('department', ''),
+                        "provincia": persona.get('province', ''),
+                        "distrito": persona.get('district', ''),
+                        "direccion": persona.get('address', ''),
+                        "ubigeo": persona.get('ubigeo', ''),
+                        # Campos adicionales útiles
+                        "nombre_completo_api": persona.get('full_name', '').strip().title(),
+                        "codigo_verificacion": persona.get('verification_code', ''),
+                        "raw_data": persona  # Para debug y campos adicionales
+                    }
                 }
             else:
                 return {
